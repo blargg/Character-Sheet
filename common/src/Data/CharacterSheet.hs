@@ -15,5 +15,8 @@ instance Show1 f => Show (CharacterSheet f) where
                                 . showsPrec1 0 na
                                 $ ""
 
-invert :: (Applicative f) => CharacterSheet f -> f (CharacterSheet Identity)
-invert (CharacterSheet nu na) = CharacterSheet <$> fmap Identity nu <*> fmap Identity na
+invert :: (Applicative f, Applicative g) => CharacterSheet f -> f (CharacterSheet g)
+invert (CharacterSheet nu na) = CharacterSheet <$> fmap pure nu <*> fmap pure na
+
+invertId :: (Applicative f) => CharacterSheet f -> f (CharacterSheet Identity)
+invertId = invert
