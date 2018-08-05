@@ -25,20 +25,28 @@ header :: StaticWidget x ()
 header = do
     el "title" $ text "Character Sheet"
     elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", static @"css/Style.css")]) $ return ()
+    elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", "https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono")]) $ return ()
 
 body :: Widget x ()
 body = do
   text "Character Sheet"
   el "p" $ text $ T.pack commonStuff
-  val <- el "div" $ abilityDisplay "Str"
-  text <- textInput def
-  let character = invertId $ CharacterSheet val (value text)
-  display character
+  abs <- elClass "div" "grid" $ abilityBlock
+  display (sequenceA abs)
   return ()
 
+abilityBlock :: (MonadWidget t m) => m (Abilities (Dynamic t Int))
+abilityBlock = Abilities <$> abilityDisplay "Str"
+                         <*> abilityDisplay "Dex"
+                         <*> abilityDisplay "Con"
+                         <*> abilityDisplay "Wis"
+                         <*> abilityDisplay "Int"
+                         <*> abilityDisplay "Cha"
+
 abilityDisplay :: (MonadWidget t m) => T.Text -> m (Dynamic t Int)
-abilityDisplay name = do
-    el "span" $ text name
-    abilityScore <- fromMaybe 10 <$$> numberInput
-    el "span" $ display (abilityMod <$> abilityScore)
+abilityDisplay name = elClass "div" "row" $ do
+    cell $ text name
+    abilityScore <- cell $ fromMaybe 10 <$$> numberInput
+    cell $ display (abilityMod <$> abilityScore)
     return abilityScore
+    where cell = elClass "div" "cell"

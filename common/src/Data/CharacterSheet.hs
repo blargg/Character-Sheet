@@ -1,3 +1,6 @@
+{-# language DeriveFunctor #-}
+{-# language DeriveFoldable #-}
+{-# language DeriveTraversable #-}
 module Data.CharacterSheet where
 
 import Data.Functor.Classes
@@ -21,6 +24,15 @@ invert (CharacterSheet nu na) = CharacterSheet <$> fmap pure nu <*> fmap pure na
 invertId :: (Applicative f) => CharacterSheet f -> f (CharacterSheet Identity)
 invertId = invert
 
--- Convert an ability score into the ability modifier
+data Abilities a = Abilities { str :: a
+                             , dex :: a
+                             , con :: a
+                             , wis :: a
+                             , int :: a
+                             , cha :: a
+                             }
+                             deriving (Functor, Foldable, Traversable, Show)
+
+
 abilityMod :: Int -> Int
 abilityMod score = (score - 10) `div` 2
