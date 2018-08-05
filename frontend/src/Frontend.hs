@@ -16,6 +16,7 @@ import Common.Api
 import Common.Compose
 import Data.CharacterSheet
 import Frontend.Input
+import Frontend.Layout
 import Static
 
 frontend :: (StaticWidget x (), Widget x ())
@@ -31,7 +32,7 @@ body :: Widget x ()
 body = do
   text "Character Sheet"
   el "p" $ text $ T.pack commonStuff
-  abs <- elClass "div" "grid" $ abilityBlock
+  abs <- grid abilityBlock
   display (sequenceA abs)
   return ()
 
@@ -44,9 +45,8 @@ abilityBlock = Abilities <$> abilityDisplay "Str"
                          <*> abilityDisplay "Cha"
 
 abilityDisplay :: (MonadWidget t m) => T.Text -> m (Dynamic t Int)
-abilityDisplay name = elClass "div" "row" $ do
+abilityDisplay name = row $ do
     cell $ text name
     abilityScore <- cell $ fromMaybe 10 <$$> numberInput
     cell $ display (abilityMod <$> abilityScore)
     return abilityScore
-    where cell = elClass "div" "cell"
