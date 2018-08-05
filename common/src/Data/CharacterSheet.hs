@@ -20,3 +20,7 @@ invert (CharacterSheet nu na) = CharacterSheet <$> fmap pure nu <*> fmap pure na
 
 invertId :: (Applicative f) => CharacterSheet f -> f (CharacterSheet Identity)
 invertId = invert
+
+-- Convert an ability score into the ability modifier
+abilityMod :: Int -> Int
+abilityMod score = (score - 10) `div` 2

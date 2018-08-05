@@ -9,4 +9,5 @@ library
 
   exposed-modules:
     Common.Api
+    Common.Compose
     Data.CharacterSheet
