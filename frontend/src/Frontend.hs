@@ -31,7 +31,6 @@ header = do
 body :: Widget x ()
 body = do
   el "h1" $ text "Character Sheet"
-  el "p" $ text $ T.pack commonStuff
   abs <- grid abilityBlock
   display (sequenceA abs)
   return ()
