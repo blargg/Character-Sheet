@@ -30,19 +30,21 @@ header = do
 
 body :: Widget x ()
 body = do
-  text "Character Sheet"
+  el "h1" $ text "Character Sheet"
   el "p" $ text $ T.pack commonStuff
   abs <- grid abilityBlock
   display (sequenceA abs)
   return ()
 
 abilityBlock :: (MonadWidget t m) => m (Abilities (Dynamic t Int))
-abilityBlock = Abilities <$> abilityDisplay "Str"
-                         <*> abilityDisplay "Dex"
-                         <*> abilityDisplay "Con"
-                         <*> abilityDisplay "Wis"
-                         <*> abilityDisplay "Int"
-                         <*> abilityDisplay "Cha"
+abilityBlock = do
+    row $ cell (text "Ability") >> cell (text "Score") >> cell (text "Mod")
+    Abilities <$> abilityDisplay "Str"
+              <*> abilityDisplay "Dex"
+              <*> abilityDisplay "Con"
+              <*> abilityDisplay "Wis"
+              <*> abilityDisplay "Int"
+              <*> abilityDisplay "Cha"
 
 abilityDisplay :: (MonadWidget t m) => T.Text -> m (Dynamic t Int)
 abilityDisplay name = row $ do
