@@ -9,6 +9,11 @@ body {
     width: 2em;
 }
 
+.number {
+    font-family: 'Roboto Mono', monospace;
+    text-align: right;
+}
+
 .grid {
     display: table;
     border-collapse: separate;

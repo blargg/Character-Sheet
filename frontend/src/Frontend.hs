@@ -48,6 +48,6 @@ abilityBlock = do
 abilityDisplay :: (MonadWidget t m) => T.Text -> m (Dynamic t Int)
 abilityDisplay name = row $ do
     cell $ text name
-    abilityScore <- cell $ fromMaybe 10 <$$> numberInput
-    cell $ display (abilityMod <$> abilityScore)
+    abilityScore <- cellClass "number" $ fromMaybe 10 <$$> numberInput
+    cellClass "number" $ display (abilityMod <$> abilityScore)
     return abilityScore
