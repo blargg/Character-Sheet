@@ -19,7 +19,7 @@ numberInput :: MonadWidget t m => m (Dynamic t (Maybe Int))
 numberInput = parseInput parse numberConfig
     where
         numberConfig = def & textInputConfig_inputType .~ "number"
-                           & textInputConfig_attributes .~ pure (classAttr "numberInput")
+                           & textInputConfig_attributes .~ pure (classAttr "numberInput number")
         parse :: T.Text -> Maybe Int
         parse = readMaybe . T.unpack
 
