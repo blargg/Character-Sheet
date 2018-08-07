@@ -30,10 +30,12 @@ header = do
 
 body :: Widget x ()
 body = do
-  el "h1" $ text "Character Sheet"
-  abs <- grid abilityBlock
-  display (sequenceA abs)
-  return ()
+    el "h1" $ text "Character Sheet"
+    abs <- grid abilityBlock
+    display (sequenceA abs)
+    cls <- classBlock
+    el "p" $ display (sequenceA cls)
+    return ()
 
 abilityBlock :: (MonadWidget t m) => m (Abilities (Dynamic t Int))
 abilityBlock = do
@@ -51,3 +53,17 @@ abilityDisplay name = row $ do
     abilityScore <- cell $ fromMaybe 10 <$$> numberInput
     cellClass "number" $ display (abilityMod <$> abilityScore)
     return abilityScore
+
+classBlock :: (MonadWidget t m) => m (ClassData (Dynamic t Int))
+classBlock = grid $ do
+    row $ ct "Class Name" >> ct "Level" >> ct "BAB" >> ct "Fort" >> ct "Ref" >> ct "Will"
+    row $ do
+        className <- cell $ textInput def
+        levels <- cell numDefZero
+        baseAttackBonus <- cell numDefZero
+        fortSave <- cell numDefZero
+        refSave <- cell numDefZero
+        willSave <- cell numDefZero
+        return $ ClassData levels baseAttackBonus fortSave refSave willSave
+    where ct = cell . text
+          numDefZero = fromMaybe 0 <$$> numberInput

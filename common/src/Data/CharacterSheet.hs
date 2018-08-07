@@ -36,3 +36,11 @@ data Abilities a = Abilities { str :: a
 
 abilityMod :: Int -> Int
 abilityMod score = (score - 10) `div` 2
+
+data ClassData a = ClassData { level :: a
+                             , bab :: a
+                             , fortitude :: a
+                             , reflex :: a
+                             , will :: a
+                             }
+                             deriving (Functor, Foldable, Traversable, Show)
