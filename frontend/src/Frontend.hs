@@ -35,6 +35,7 @@ body = do
     display (sequenceA abs)
     cls <- classBlock
     el "p" $ display (sequenceA cls)
+    combatManuverBlock abs cls
     return ()
 
 abilityBlock :: (MonadWidget t m) => m (Abilities (Dynamic t Int))
@@ -67,3 +68,17 @@ classBlock = grid $ do
         return $ ClassData levels baseAttackBonus fortSave refSave willSave
     where ct = cell . text
           numDefZero = fromMaybe 0 <$$> numberInput
+
+combatManuverBlock :: (MonadWidget t m) => Abilities (Dynamic t Int) -> ClassData (Dynamic t Int) -> m ()
+combatManuverBlock abs cls = grid $ do
+    row $ ct "CMB" >> cell (display cmb)
+    row $ ct "CMD" >> cell (display cmd)
+    where ct = cell . text
+          combatStats = do
+              strengthMod <- str absMod
+              dexterity <- dex absMod
+              baseAttack <- bab cls
+              return $ (strengthMod + baseAttack, strengthMod + dexterity + baseAttack + 10)
+          cmb = fst <$> combatStats
+          cmd = snd <$> combatStats
+          absMod = abilityMod <$$> abs
