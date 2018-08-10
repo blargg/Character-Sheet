@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE RecursiveDo #-}
 module Frontend where
 
 import Control.Monad (join)
@@ -88,17 +89,36 @@ combatManuverBlock abs cls = grid $ do
           absMod = abilityMod <$$> abs
 
 armorBlock :: (MonadWidget t m) => m (Dynamic t Int)
-armorBlock = do
+armorBlock = mdo
+    let addLines = attachWith (\m _ -> nextKey m) (current armorLines) addPressed
+        removeLines = attachWithMaybe (\m x -> maxKey m) (current armorLines) removePressed
+    armorLines <- addRemoveSet (0 =: ()) addLines removeLines
     armorVals <- grid $ do
         row $ ct "name" >> ct "ac"
-        armorRows (pure $ 1 =: () <> 2 =: ())
+        armorRows armorLines
     addPressed <- button "Add Row"
     removePressed <- button "Remove Row"
     return . join $ dynSum <$> armorVals
     where dynSum = foldl (\dx dy -> (+) <$> dx <*> dy) (pure 0)
 
-dSet :: Dynamic t (M.Map k ())
-dSet = undefined
+nextKey :: M.Map Int a -> Int
+nextKey = (1+) . fromMaybe 0 . maxKey
+
+maxKey :: M.Map k a -> Maybe k
+maxKey = fmap fst . lookupMax
+
+lookupMax :: M.Map k a -> Maybe (k, a)
+lookupMax m | M.null m = Nothing
+            | otherwise = Just (M.findMax m)
+
+-- TODO: move to a module
+-- TODO: may want a version that is specific to adding/removing the end of the
+-- set
+addRemoveSet :: (MonadWidget t m, Ord k) => M.Map k () -> Event t k -> Event t k -> m (Dynamic t (M.Map k ()))
+addRemoveSet initSet addItem removeItem = foldDyn addOrRemove initSet addRemoveE
+    where addRemoveE = (Right <$> addItem) <> (Left <$> removeItem)
+          addOrRemove (Right k) m = M.insert k () m
+          addOrRemove (Left k) m = M.delete k m
 
 armorRows :: (MonadWidget t m) => Dynamic t (M.Map Int ()) -> m (Dynamic t (M.Map Int (Dynamic t Int)))
 armorRows lines = list lines (const armorRow)
