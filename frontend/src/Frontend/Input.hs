@@ -27,7 +27,7 @@ type Attr = Map Text Text
 
 -- Constructs Attr for a class string.
 classAttr :: Text -> Attr
-classAttr classes = M.singleton "class" classes
+classAttr classes = "class" =: classes
 
 -- TODO set a class depending on valid or invalid
 parseInput :: MonadWidget t m => (T.Text -> Maybe a) -> TextInputConfig t -> m (Dynamic t (Maybe a))
