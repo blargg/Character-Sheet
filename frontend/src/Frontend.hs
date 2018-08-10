@@ -96,8 +96,8 @@ armorBlock = mdo
     armorVals <- grid $ do
         row $ ct "name" >> ct "ac"
         armorRows armorLines
-    addPressed <- button "Add Row"
-    removePressed <- button "Remove Row"
+    addPressed <- button "Add"
+    removePressed <- button "Remove"
     return . join $ dynSum <$> armorVals
     where dynSum = foldl (\dx dy -> (+) <$> dx <*> dy) (pure 0)
 
