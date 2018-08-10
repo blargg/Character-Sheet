@@ -5,6 +5,7 @@
 module Frontend where
 
 import Control.Monad (join)
+import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Functor.Compose
 import Data.Map (Map)
@@ -42,6 +43,8 @@ body = do
     combatManuverBlock abs cls
     armorClass <- armorBlock
     el "p" $ display armorClass
+    skillMap <- skillsBlock pathfinderSkills
+    el "p" $ display (sum <$> (skillRanks <$$> sequenceA skillMap))
     return ()
 
 abilityBlock :: (MonadWidget t m) => m (Abilities (Dynamic t Int))
@@ -128,5 +131,15 @@ armorRow = row $ do
     cell $ textInput def
     cell $ fromMaybe 0 <$$> numberInput
 
-ct :: (MonadWidget t m) => T.Text -> m ()
+skillsBlock :: (MonadWidget t m) => M.Map Text Ability -> m (M.Map Text (Dynamic t Skill))
+skillsBlock statsConfig = grid $ M.traverseWithKey skillLine statsConfig
+
+skillLine :: (MonadWidget t m) => Text -> Ability -> m (Dynamic t Skill)
+skillLine skillName abl = row $ do
+    ct skillName
+    ct . shortName $ abl
+    ranks <- fromMaybe 0 <$$> numberInput
+    return $ Skill <$> pure skillName <*> pure False <*> pure abl <*> ranks <*> pure 0
+
+ct :: (MonadWidget t m) => Text -> m ()
 ct = cell . text
