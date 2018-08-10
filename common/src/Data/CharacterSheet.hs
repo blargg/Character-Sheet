@@ -1,28 +1,15 @@
-{-# language DeriveFunctor #-}
 {-# language DeriveFoldable #-}
+{-# language DeriveFunctor #-}
 {-# language DeriveTraversable #-}
+{-# language OverloadedStrings #-}
 module Data.CharacterSheet where
 
 import Data.Functor.Classes
 import Data.Functor.Identity
+import qualified Data.Map as M
+import Data.Map (Map)
 import qualified Data.Text as T
-
-data CharacterSheet f = CharacterSheet { num :: f Int
-                                       , name :: f T.Text
-                                       }
-
-instance Show1 f => Show (CharacterSheet f) where
-    show (CharacterSheet nu na) = showString "CharacterSheet "
-                                . showsPrec1 0 nu
-                                . showString " "
-                                . showsPrec1 0 na
-                                $ ""
-
-invert :: (Applicative f, Applicative g) => CharacterSheet f -> f (CharacterSheet g)
-invert (CharacterSheet nu na) = CharacterSheet <$> fmap pure nu <*> fmap pure na
-
-invertId :: (Applicative f) => CharacterSheet f -> f (CharacterSheet Identity)
-invertId = invert
+import Data.Text (Text)
 
 data Abilities a = Abilities { str :: a
                              , dex :: a
@@ -44,3 +31,64 @@ data ClassData a = ClassData { level :: a
                              , will :: a
                              }
                              deriving (Functor, Foldable, Traversable, Show)
+
+data Ability = Strength
+             | Dexterity
+             | Constitution
+             | Wisdom
+             | Intelligence
+             | Charisma
+             deriving (Show)
+
+shortName :: Ability -> Text
+shortName Strength = "Str"
+shortName Dexterity = "Dex"
+shortName Constitution = "Con"
+shortName Wisdom = "Wis"
+shortName Intelligence = "Int"
+shortName Charisma = "Cha"
+
+data Skill = Skill { skillName :: Text
+                   , isClassSkill :: Bool
+                   , abilityType :: Ability
+                   , skillRanks :: Int
+                   , skillMod :: Int
+                   }
+
+pathfinderSkills :: Map Text Ability
+pathfinderSkills = M.fromList [ ("Acrobatics", Dexterity)
+                              , ("Appraise", Wisdom)
+                              , ("Bluff", Charisma)
+                              , ("Climb", Strength)
+                              , ("Craft", Intelligence)
+                              , ("Diplomacy", Charisma)
+                              , ("Disable Device", Dexterity)
+                              , ("Disguise", Charisma)
+                              , ("Escape Artist", Dexterity)
+                              , ("Fly", Dexterity)
+                              , ("Handle Animal", Charisma)
+                              , ("Heal", Wisdom)
+                              , ("Intimidate", Charisma)
+                              , ("Knowledge (arcana)",  Intelligence)
+                              , ("Knowledge (dungeoneering)", Intelligence)
+                              , ("Knowledge (engineering)", Intelligence)
+                              , ("Knowledge (geography)", Intelligence)
+                              , ("Knowledge (history)", Intelligence)
+                              , ("Knowledge (local)", Intelligence)
+                              , ("Knowledge (nature)", Intelligence)
+                              , ("Knowledge (nobility)", Intelligence)
+                              , ("Knowledge (planes)", Intelligence)
+                              , ("Knowledge (religion)", Intelligence)
+                              , ("Linguistics", Intelligence)
+                              , ("Perception", Wisdom)
+                              , ("Perform", Charisma)
+                              , ("Profession", Wisdom)
+                              , ("Ride", Dexterity)
+                              , ("Sense Motive", Wisdom)
+                              , ("Sleight of Hand", Dexterity)
+                              , ("Spellcraft", Intelligence)
+                              , ("Stealth", Dexterity)
+                              , ("Survival", Wisdom)
+                              , ("Swim", Strength)
+                              , ("Use Magic Device", Charisma)
+                              ]
