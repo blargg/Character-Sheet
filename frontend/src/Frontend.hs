@@ -3,14 +3,17 @@
 {-# LANGUAGE TypeApplications #-}
 module Frontend where
 
+import Control.Monad (join)
 import qualified Data.Text as T
-import Reflex.Dom.Core
-import Reflex.Dom
 import Data.Functor.Compose
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
 import Text.Read (readMaybe)
+import Data.Semigroup ((<>))
+
+import Reflex.Dom.Core
+import Reflex.Dom
 
 import Common.Api
 import Common.Compose
@@ -36,6 +39,8 @@ body = do
     cls <- classBlock
     el "p" $ display (sequenceA cls)
     combatManuverBlock abs cls
+    armorClass <- armorBlock
+    el "p" $ display armorClass
     return ()
 
 abilityBlock :: (MonadWidget t m) => m (Abilities (Dynamic t Int))
@@ -73,8 +78,7 @@ combatManuverBlock :: (MonadWidget t m) => Abilities (Dynamic t Int) -> ClassDat
 combatManuverBlock abs cls = grid $ do
     row $ ct "CMB" >> cell (display cmb)
     row $ ct "CMD" >> cell (display cmd)
-    where ct = cell . text
-          combatStats = do
+    where combatStats = do
               strengthMod <- str absMod
               dexterity <- dex absMod
               baseAttack <- bab cls
@@ -82,3 +86,27 @@ combatManuverBlock abs cls = grid $ do
           cmb = fst <$> combatStats
           cmd = snd <$> combatStats
           absMod = abilityMod <$$> abs
+
+armorBlock :: (MonadWidget t m) => m (Dynamic t Int)
+armorBlock = do
+    armorVals <- grid $ do
+        row $ ct "name" >> ct "ac"
+        armorRows (pure $ 1 =: () <> 2 =: ())
+    addPressed <- button "Add Row"
+    removePressed <- button "Remove Row"
+    return . join $ dynSum <$> armorVals
+    where dynSum = foldl (\dx dy -> (+) <$> dx <*> dy) (pure 0)
+
+dSet :: Dynamic t (M.Map k ())
+dSet = undefined
+
+armorRows :: (MonadWidget t m) => Dynamic t (M.Map Int ()) -> m (Dynamic t (M.Map Int (Dynamic t Int)))
+armorRows lines = list lines (const armorRow)
+
+armorRow :: (MonadWidget t m) => m (Dynamic t Int)
+armorRow = row $ do
+    cell $ textInput def
+    cell $ fromMaybe 0 <$$> numberInput
+
+ct :: (MonadWidget t m) => T.Text -> m ()
+ct = cell . text
