@@ -88,8 +88,10 @@ data Skill = Skill { skillName :: Text
 classSkillBonus :: Skill -> Int
 classSkillBonus sk | skillRanks sk > 0 && isClassSkill sk = 4
                    | otherwise                            = 0
-skillBonus :: Skill -> Int
-skillBonus sk = skillRanks sk + skillMod sk + classSkillBonus sk
+skillBonus :: Abilities Int -> Skill -> Int
+skillBonus abl sk = ablMod + skillRanks sk + skillMod sk + classSkillBonus sk
+    where ability = abilityType sk
+          ablMod = abilityMod (index abl ability)
 
 pathfinderSkills :: Map Text Ability
 pathfinderSkills = M.fromList [ ("Acrobatics", Dexterity)

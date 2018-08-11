@@ -45,7 +45,10 @@ body = do
     armorClass <- armorBlock
     el "p" $ display armorClass
     skillMap <- skillsBlock abs pathfinderSkills
-    el "p" $ display (sum <$> (skillBonus <$$> sequenceA skillMap))
+    el "p" $ display $ do
+        abs' <- sequenceA abs
+        skM <- sequenceA skillMap
+        return $ sum (fmap (skillBonus abs') skM)
     return ()
 
 abilityBlock :: (MonadWidget t m) => m (Abilities (Dynamic t Int))
@@ -146,7 +149,7 @@ skillLine abls skillName abl = row $ do
     ranks <- cell $ fromMaybe 0 <$$> numberInput
     miscMod <- cell $ fromMaybe 0 <$$> numberInput
     let sk = Skill <$> pure skillName <*> value classCB <*> pure abl <*> ranks <*> miscMod
-    cell $ display ((+) <$> fmap abilityMod (index abls abl) <*> fmap skillBonus sk)
+    cell $ display (skillBonus <$> sequenceA abls <*> sk)
     return sk
 
 ct :: (MonadWidget t m) => Text -> m ()
