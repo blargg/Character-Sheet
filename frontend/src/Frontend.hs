@@ -5,6 +5,7 @@
 module Frontend where
 
 import Control.Monad (join)
+import Data.Functor.Rep
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Functor.Compose
@@ -43,8 +44,8 @@ body = do
     combatManuverBlock abs cls
     armorClass <- armorBlock
     el "p" $ display armorClass
-    skillMap <- skillsBlock pathfinderSkills
-    el "p" $ display (sum <$> (skillRanks <$$> sequenceA skillMap))
+    skillMap <- skillsBlock abs pathfinderSkills
+    el "p" $ display (sum <$> (skillBonus <$$> sequenceA skillMap))
     return ()
 
 abilityBlock :: (MonadWidget t m) => m (Abilities (Dynamic t Int))
@@ -131,19 +132,22 @@ armorRow = row $ do
     cell $ textInput def
     cell $ fromMaybe 0 <$$> numberInput
 
-skillsBlock :: (MonadWidget t m) => M.Map Text Ability -> m (M.Map Text (Dynamic t Skill))
-skillsBlock statsConfig = grid $ do
+skillsBlock :: (MonadWidget t m) => Abilities (Dynamic t Int) -> M.Map Text Ability -> m (M.Map Text (Dynamic t Skill))
+skillsBlock abl statsConfig = grid $ do
     row $ ct "Skill" >> ct "Ability" >> ct "Class Skill" >> ct "Ranks" >> ct "misc. mod"
-    M.traverseWithKey skillLine statsConfig
+        >> ct "total"
+    M.traverseWithKey (skillLine abl) statsConfig
 
-skillLine :: (MonadWidget t m) => Text -> Ability -> m (Dynamic t Skill)
-skillLine skillName abl = row $ do
+skillLine :: (MonadWidget t m) => Abilities (Dynamic t Int) -> Text -> Ability -> m (Dynamic t Skill)
+skillLine abls skillName abl = row $ do
     ct skillName
     ct . shortName $ abl
     classCB <- cell $ checkbox False def
     ranks <- cell $ fromMaybe 0 <$$> numberInput
     miscMod <- cell $ fromMaybe 0 <$$> numberInput
-    return $ Skill <$> pure skillName <*> value classCB <*> pure abl <*> ranks <*> miscMod
+    let sk = Skill <$> pure skillName <*> value classCB <*> pure abl <*> ranks <*> miscMod
+    cell $ display ((+) <$> fmap abilityMod (index abls abl) <*> fmap skillBonus sk)
+    return sk
 
 ct :: (MonadWidget t m) => Text -> m ()
 ct = cell . text
