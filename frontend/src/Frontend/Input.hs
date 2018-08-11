@@ -15,12 +15,12 @@ import Text.Read (readMaybe)
 import Common.Api
 import Data.CharacterSheet
 
-numberInput :: MonadWidget t m => m (Dynamic t (Maybe Int))
+numberInput :: (Read a, MonadWidget t m) => m (Dynamic t (Maybe a))
 numberInput = parseInput parse numberConfig
     where
         numberConfig = def & textInputConfig_inputType .~ "number"
                            & textInputConfig_attributes .~ pure (classAttr "numberInput number")
-        parse :: T.Text -> Maybe Int
+        parse :: (Read a) => Text -> Maybe a
         parse = readMaybe . T.unpack
 
 type Attr = Map Text Text

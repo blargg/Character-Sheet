@@ -108,7 +108,7 @@ armorBlock = mdo
     return . join $ dynSum <$> armorVals
     where dynSum = foldl (\dx dy -> (+) <$> dx <*> dy) (pure 0)
 
-nextKey :: M.Map Int a -> Int
+nextKey :: (Ord k, Num k) => M.Map k a -> k
 nextKey = (1+) . fromMaybe 0 . maxKey
 
 maxKey :: M.Map k a -> Maybe k
