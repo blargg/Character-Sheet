@@ -2,10 +2,13 @@
 {-# language DeriveFunctor #-}
 {-# language DeriveTraversable #-}
 {-# language OverloadedStrings #-}
+{-# language TypeFamilies #-}
 module Data.CharacterSheet where
 
+import Data.Distributive
 import Data.Functor.Classes
 import Data.Functor.Identity
+import Data.Functor.Rep
 import qualified Data.Map as M
 import Data.Map (Map)
 import qualified Data.Text as T
@@ -20,6 +23,40 @@ data Abilities a = Abilities { str :: a
                              }
                              deriving (Functor, Foldable, Traversable, Show)
 
+instance Distributive Abilities where
+    distribute abs = Abilities (fmap str abs)
+                               (fmap dex abs)
+                               (fmap con abs)
+                               (fmap wis abs)
+                               (fmap int abs)
+                               (fmap cha abs)
+
+data Ability = Strength
+             | Dexterity
+             | Constitution
+             | Wisdom
+             | Intelligence
+             | Charisma
+             deriving (Show)
+
+-- TODO tests
+-- Estabilish a connection between (Abilities a) and (Ability -> a)
+instance Representable Abilities where
+    type Rep Abilities = Ability
+
+    index abl Strength = str abl
+    index abl Dexterity = dex abl
+    index abl Constitution = con abl
+    index abl Wisdom = wis abl
+    index abl Intelligence = int abl
+    index abl Charisma = cha abl
+
+    tabulate f = Abilities (f Strength)
+                           (f Dexterity)
+                           (f Constitution)
+                           (f Wisdom)
+                           (f Intelligence)
+                           (f Charisma)
 
 abilityMod :: Int -> Int
 abilityMod score = (score - 10) `div` 2
@@ -32,13 +69,6 @@ data ClassData a = ClassData { level :: a
                              }
                              deriving (Functor, Foldable, Traversable, Show)
 
-data Ability = Strength
-             | Dexterity
-             | Constitution
-             | Wisdom
-             | Intelligence
-             | Charisma
-             deriving (Show)
 
 shortName :: Ability -> Text
 shortName Strength = "Str"
@@ -54,6 +84,12 @@ data Skill = Skill { skillName :: Text
                    , skillRanks :: Int
                    , skillMod :: Int
                    }
+
+classSkillBonus :: Skill -> Int
+classSkillBonus sk | skillRanks sk > 0 && isClassSkill sk = 4
+                   | otherwise                            = 0
+skillBonus :: Skill -> Int
+skillBonus sk = skillRanks sk + skillMod sk + classSkillBonus sk
 
 pathfinderSkills :: Map Text Ability
 pathfinderSkills = M.fromList [ ("Acrobatics", Dexterity)
