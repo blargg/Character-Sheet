@@ -132,14 +132,18 @@ armorRow = row $ do
     cell $ fromMaybe 0 <$$> numberInput
 
 skillsBlock :: (MonadWidget t m) => M.Map Text Ability -> m (M.Map Text (Dynamic t Skill))
-skillsBlock statsConfig = grid $ M.traverseWithKey skillLine statsConfig
+skillsBlock statsConfig = grid $ do
+    row $ ct "Skill" >> ct "Ability" >> ct "Class Skill" >> ct "Ranks" >> ct "misc. mod"
+    M.traverseWithKey skillLine statsConfig
 
 skillLine :: (MonadWidget t m) => Text -> Ability -> m (Dynamic t Skill)
 skillLine skillName abl = row $ do
     ct skillName
     ct . shortName $ abl
-    ranks <- fromMaybe 0 <$$> numberInput
-    return $ Skill <$> pure skillName <*> pure False <*> pure abl <*> ranks <*> pure 0
+    classCB <- cell $ checkbox False def
+    ranks <- cell $ fromMaybe 0 <$$> numberInput
+    miscMod <- cell $ fromMaybe 0 <$$> numberInput
+    return $ Skill <$> pure skillName <*> value classCB <*> pure abl <*> ranks <*> miscMod
 
 ct :: (MonadWidget t m) => Text -> m ()
 ct = cell . text
