@@ -88,6 +88,7 @@ data Skill = Skill { skillName :: Text
 classSkillBonus :: Skill -> Int
 classSkillBonus sk | skillRanks sk > 0 && isClassSkill sk = 4
                    | otherwise                            = 0
+
 skillBonus :: Abilities Int -> Skill -> Int
 skillBonus abl sk = ablMod + skillRanks sk + skillMod sk + classSkillBonus sk
     where ability = abilityType sk
