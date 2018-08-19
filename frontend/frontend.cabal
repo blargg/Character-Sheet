@@ -21,6 +21,7 @@ executable frontend
   build-depends: base
                , common
                , reflex-dom
+               , ghcjs-dom
                , static
                , text
                , frontend

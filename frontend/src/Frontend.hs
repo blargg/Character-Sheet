@@ -1,7 +1,8 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE RecursiveDo #-}
+{-# LANGUAGE TypeApplications #-}
 module Frontend where
 
 import Control.Monad (join)
@@ -15,8 +16,9 @@ import Data.Maybe (fromMaybe)
 import Text.Read (readMaybe)
 import Data.Semigroup ((<>))
 
-import Reflex.Dom.Core
+import Data.Functor.Misc
 import Reflex.Dom
+import Reflex.Dom.Core
 
 import Common.Api
 import Common.Compose
@@ -53,7 +55,7 @@ body = do
 
 abilityBlock :: (MonadWidget t m) => m (Abilities (Dynamic t Int))
 abilityBlock = do
-    row $ cell (text "Ability") >> cell (text "Score") >> cell (text "Mod")
+    row $ lbl "Ability" >> lbl "Score" >> lbl "Mod"
     Abilities <$> abilityDisplay "Str"
               <*> abilityDisplay "Dex"
               <*> abilityDisplay "Con"
@@ -70,7 +72,7 @@ abilityDisplay name = row $ do
 
 classBlock :: (MonadWidget t m) => m (ClassData (Dynamic t Int))
 classBlock = grid $ do
-    row $ ct "Class Name" >> ct "Level" >> ct "BAB" >> ct "Fort" >> ct "Ref" >> ct "Will"
+    row $ lbl "Class Name" >> lbl "Level" >> lbl "BAB" >> lbl "Fort" >> lbl "Ref" >> lbl "Will"
     row $ do
         className <- cell $ textInput def
         levels <- cell numDefZero
@@ -79,8 +81,7 @@ classBlock = grid $ do
         refSave <- cell numDefZero
         willSave <- cell numDefZero
         return $ ClassData levels baseAttackBonus fortSave refSave willSave
-    where ct = cell . text
-          numDefZero = fromMaybe 0 <$$> numberInput
+    where numDefZero = fromMaybe 0 <$$> numberInput
 
 combatManuverBlock :: (MonadWidget t m) => Abilities (Dynamic t Int) -> ClassData (Dynamic t Int) -> m ()
 combatManuverBlock abs cls = grid $ do
@@ -101,7 +102,7 @@ armorBlock = mdo
         removeLines = attachWithMaybe (\m x -> maxKey m) (current armorLines) removePressed
     armorLines <- addRemoveSet (0 =: ()) addLines removeLines
     armorVals <- grid $ do
-        row $ ct "name" >> ct "ac"
+        row $ lbl "name" >> lbl "ac"
         armorRows armorLines
     addPressed <- button "Add"
     removePressed <- button "Remove"
@@ -135,10 +136,11 @@ armorRow = row $ do
     cell $ textInput def
     cell $ fromMaybe 0 <$$> numberInput
 
+-- TODO: add some sort of filter to help find things quickly
 skillsBlock :: (MonadWidget t m) => Abilities (Dynamic t Int) -> M.Map Text Ability -> m (M.Map Text (Dynamic t Skill))
 skillsBlock abl statsConfig = grid $ do
-    row $ ct "Skill" >> ct "Ability" >> ct "Class Skill" >> ct "Ranks" >> ct "misc. mod"
-        >> ct "total"
+    row $ lbl "Skill" >> lbl "Ability" >> lbl "Class Skill" >> lbl "Ranks" >> lbl "misc. mod"
+        >> lbl "total"
     M.traverseWithKey (skillLine abl) statsConfig
 
 skillLine :: (MonadWidget t m) => Abilities (Dynamic t Int) -> Text -> Ability -> m (Dynamic t Skill)
@@ -154,3 +156,6 @@ skillLine abls skillName abl = row $ do
 
 ct :: (MonadWidget t m) => Text -> m ()
 ct = cell . text
+
+lbl :: (MonadWidget t m) => Text -> m ()
+lbl = labelCell

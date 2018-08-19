@@ -18,3 +18,6 @@ cell = elClass "div" "cell"
 
 cellClass :: (MonadWidget t m) => Text -> m a -> m a
 cellClass cl = elClass "div" ("cell " `mappend` cl)
+
+labelCell :: (MonadWidget t m) => Text -> m ()
+labelCell = cellClass "label" . text
