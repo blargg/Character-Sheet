@@ -7,6 +7,8 @@ body {
 input {
     font-family: 'Roboto', sans-serif;
     height: 15px; /* TODO should calculate the height */
+    border: 0px;
+    background-color: rgba(256, 256, 256, 0.85);
 }
 
 .numberInput {
