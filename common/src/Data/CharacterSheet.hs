@@ -3,6 +3,7 @@
 {-# language DeriveTraversable #-}
 {-# language OverloadedStrings #-}
 {-# language TypeFamilies #-}
+{-# language ApplicativeDo #-}
 module Data.CharacterSheet where
 
 import Data.Distributive
@@ -58,7 +59,7 @@ instance Representable Abilities where
                            (f Intelligence)
                            (f Charisma)
 
-abilityMod :: Int -> Int
+abilityMod :: (Integral a, Num a) => a -> a
 abilityMod score = (score - 10) `div` 2
 
 data ClassData a = ClassData { level :: a
@@ -66,8 +67,19 @@ data ClassData a = ClassData { level :: a
                              , fortitude :: a
                              , reflex :: a
                              , will :: a
+                             , classHealth :: a
                              }
                              deriving (Functor, Foldable, Traversable, Show)
+
+chHealthA :: (Integral a, Num a, Applicative f) => Abilities (f a) -> ClassData (f a) -> (f a)
+chHealthA abs cls = do
+    con <-  (index abs Constitution)
+    lvls <- level cls
+    clsHP <- classHealth cls
+    return $ (abilityMod con) * lvls + clsHP
+
+chHealth :: (Integral a, Num a) => Abilities a -> ClassData a -> a
+chHealth abs cls = runIdentity $ chHealthA (Identity <$> abs) (Identity <$> cls)
 
 
 shortName :: Ability -> Text
