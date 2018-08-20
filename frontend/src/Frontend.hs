@@ -43,6 +43,7 @@ body = do
     display (sequenceA abs)
     cls <- classBlock
     el "p" $ display (sequenceA cls)
+    healthBlock abs cls
     combatManuverBlock abs cls
     armorClass <- armorBlock
     el "p" $ display armorClass
@@ -72,21 +73,33 @@ abilityDisplay name = row $ do
 
 classBlock :: (MonadWidget t m) => m (ClassData (Dynamic t Int))
 classBlock = grid $ do
-    row $ lbl "Class Name" >> lbl "Level" >> lbl "BAB" >> lbl "Fort" >> lbl "Ref" >> lbl "Will"
+    row $ lbl "Class Name" >> lbl "Level" >> lbl "HP" >> lbl "BAB" >> lbl "Fort" >> lbl "Ref" >> lbl "Will"
     row $ do
         className <- cell $ textInput def
         levels <- cell numDefZero
+        hp <- cell numDefZero
         baseAttackBonus <- cell numDefZero
         fortSave <- cell numDefZero
         refSave <- cell numDefZero
         willSave <- cell numDefZero
-        return $ ClassData levels baseAttackBonus fortSave refSave willSave
+        return $ ClassData levels baseAttackBonus fortSave refSave willSave hp
     where numDefZero = fromMaybe 0 <$$> numberInput
+
+-- displays current total health, temp hp, wounds, remaining health
+healthBlock :: (MonadWidget t m) => Abilities (Dynamic t Int) -> ClassData (Dynamic t Int) -> m ()
+healthBlock abs cls = grid $ do
+    let hp = chHealthA abs cls
+    row $ lbl "Tot HP" >> lbl "Wounds" >> lbl "Remaining"
+    row $ do
+        cellNum (display hp)
+        wnds <- cell $ fromMaybe 0 <$$> numberInput
+        cellNum $ display ((-) <$> hp <*> wnds)
+    where cellNum = cellClass "number"
 
 combatManuverBlock :: (MonadWidget t m) => Abilities (Dynamic t Int) -> ClassData (Dynamic t Int) -> m ()
 combatManuverBlock abs cls = grid $ do
-    row $ ct "CMB" >> cell (display cmb)
-    row $ ct "CMD" >> cell (display cmd)
+    row $ ct "CMB" >> cellNum (display cmb)
+    row $ ct "CMD" >> cellNum (display cmd)
     where combatStats = do
               strengthMod <- str absMod
               dexterity <- dex absMod
@@ -95,6 +108,7 @@ combatManuverBlock abs cls = grid $ do
           cmb = fst <$> combatStats
           cmd = snd <$> combatStats
           absMod = abilityMod <$$> abs
+          cellNum = cellClass "number"
 
 armorBlock :: (MonadWidget t m) => m (Dynamic t Int)
 armorBlock = mdo
@@ -151,7 +165,7 @@ skillLine abls skillName abl = row $ do
     ranks <- cell $ fromMaybe 0 <$$> numberInput
     miscMod <- cell $ fromMaybe 0 <$$> numberInput
     let sk = Skill <$> pure skillName <*> value classCB <*> pure abl <*> ranks <*> miscMod
-    cell $ display (skillBonus <$> sequenceA abls <*> sk)
+    cellClass "number" $ display (skillBonus <$> sequenceA abls <*> sk)
     return sk
 
 ct :: (MonadWidget t m) => Text -> m ()
