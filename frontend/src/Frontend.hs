@@ -89,7 +89,7 @@ classBlock = grid $ do
 healthBlock :: (MonadWidget t m) => Abilities (Dynamic t Int) -> ClassData (Dynamic t Int) -> m ()
 healthBlock abs cls = grid $ do
     let hp = chHealthA abs cls
-    row $ lbl "Tot HP" >> lbl "Wounds" >> lbl "Remaining"
+    row $ lbl "Max HP" >> lbl "Wounds" >> lbl "HP"
     row $ do
         cellNum (display hp)
         wnds <- cell $ fromMaybe 0 <$$> numberInput
