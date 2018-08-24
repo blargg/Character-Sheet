@@ -113,15 +113,16 @@ combatManuverBlock abs cls = grid $ do
 armorBlock :: (MonadWidget t m) => m (Dynamic t Int)
 armorBlock = mdo
     let addLines = attachWith (\m _ -> nextKey m) (current armorLines) addPressed
-        removeLines = attachWithMaybe (\m x -> maxKey m) (current armorLines) removePressed
+        removeLines = removeEvents armorVals
     armorLines <- addRemoveSet (0 =: ()) addLines removeLines
     armorVals <- grid $ do
         row $ lbl "name" >> lbl "ac"
         armorRows armorLines
     addPressed <- button "Add"
-    removePressed <- button "Remove"
-    return . join $ dynSum <$> armorVals
+    return . join $ dynSum <$> (fst <$$> armorVals)
     where dynSum = foldl (\dx dy -> (+) <$> dx <*> dy) (pure 0)
+          removeEvents :: (Reflex t) => (Dynamic t (M.Map k (b, Event t a))) -> (Event t a)
+          removeEvents x = switchPromptlyDyn $ leftmost . fmap (snd . snd) . M.toList <$> x
 
 nextKey :: (Ord k, Num k) => M.Map k a -> k
 nextKey = (1+) . fromMaybe 0 . maxKey
@@ -142,13 +143,20 @@ addRemoveSet initSet addItem removeItem = foldDyn addOrRemove initSet addRemoveE
           addOrRemove (Right k) m = M.insert k () m
           addOrRemove (Left k) m = M.delete k m
 
-armorRows :: (MonadWidget t m) => Dynamic t (M.Map Int ()) -> m (Dynamic t (M.Map Int (Dynamic t Int)))
-armorRows lines = list lines (const armorRow)
+armorRows :: (MonadWidget t m) => Dynamic t (M.Map Int ()) -> m (Dynamic t (M.Map Int ((Dynamic t Int), Event t Int)))
+armorRows lines = listWithKey lines keyedArmorRow
 
-armorRow :: (MonadWidget t m) => m (Dynamic t Int)
+keyedArmorRow :: (MonadWidget t m) => Int -> a -> m (Dynamic t Int, Event t Int)
+keyedArmorRow key  _ = do
+          (v, ev) <- armorRow
+          return (v, key <$ ev)
+
+armorRow :: (MonadWidget t m) => m (Dynamic t Int, Event t ())
 armorRow = row $ do
     cell $ textInput def
-    cell $ fromMaybe 0 <$$> numberInput
+    armorVal <- cell $ fromMaybe 0 <$$> numberInput
+    delEvent <- button "delete line"
+    return (armorVal, delEvent)
 
 -- TODO: add some sort of filter to help find things quickly
 skillsBlock :: (MonadWidget t m) => Abilities (Dynamic t Int) -> M.Map Text Ability -> m (M.Map Text (Dynamic t Skill))
