@@ -121,7 +121,7 @@ armorBlock = mdo
     addPressed <- button "Add"
     return . join $ dynSum <$> (fst <$$> armorVals)
     where dynSum = foldl (\dx dy -> (+) <$> dx <*> dy) (pure 0)
-          removeEvents :: (Reflex t) => (Dynamic t (M.Map k (b, Event t a))) -> (Event t a)
+          removeEvents :: (Reflex t) => Dynamic t (M.Map k (b, Event t a)) -> (Event t a)
           removeEvents x = switchPromptlyDyn $ leftmost . fmap (snd . snd) . M.toList <$> x
 
 nextKey :: (Ord k, Num k) => M.Map k a -> k
