@@ -6,7 +6,6 @@
 module Frontend where
 
 import Control.Monad (join)
-import Data.Functor.Rep
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Functor.Compose
@@ -14,11 +13,10 @@ import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
 import Text.Read (readMaybe)
-import Data.Semigroup ((<>))
 
 import Data.Functor.Misc
 import Reflex.Dom
-import Reflex.Dom.Core
+import Reflex.Util
 
 import Common.Api
 import Common.Compose
@@ -133,15 +131,6 @@ maxKey = fmap fst . lookupMax
 lookupMax :: M.Map k a -> Maybe (k, a)
 lookupMax m | M.null m = Nothing
             | otherwise = Just (M.findMax m)
-
--- TODO: move to a module
--- TODO: may want a version that is specific to adding/removing the end of the
--- set
-addRemoveSet :: (MonadWidget t m, Ord k) => M.Map k () -> Event t k -> Event t k -> m (Dynamic t (M.Map k ()))
-addRemoveSet initSet addItem removeItem = foldDyn addOrRemove initSet addRemoveE
-    where addRemoveE = (Right <$> addItem) <> (Left <$> removeItem)
-          addOrRemove (Right k) m = M.insert k () m
-          addOrRemove (Left k) m = M.delete k m
 
 armorRows :: (MonadWidget t m) => Dynamic t (M.Map Int ()) -> m (Dynamic t (M.Map Int ((Dynamic t Int), Event t Int)))
 armorRows lines = listWithKey lines keyedArmorRow
