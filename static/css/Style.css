@@ -2,6 +2,8 @@
 body {
     background-color: lightsteelblue;
     font-family: 'Roboto', sans-serif;
+    width: 1000px;
+    margin: 0 auto;
 }
 
 input {
@@ -18,6 +20,15 @@ input {
 .number {
     font-family: 'Roboto Mono', monospace;
     text-align: right;
+}
+
+.flexContainer {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.inline {
+    display: inline-flex;
 }
 
 .grid {

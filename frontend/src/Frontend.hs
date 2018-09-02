@@ -35,22 +35,17 @@ header = do
     elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", "https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono")]) $ return ()
 
 body :: Widget x ()
-body = do
-    el "h1" $ text "Character Sheet"
-    abs <- grid abilityBlock
-    display (sequenceA abs)
-    cls <- classBlock
-    el "p" $ display (sequenceA cls)
-    healthBlock abs cls
-    combatManuverBlock abs cls
-    armorClass <- armorBlock
-    el "p" $ display armorClass
-    skillMap <- skillsBlock abs pathfinderSkills
-    el "p" $ display $ do
-        abs' <- sequenceA abs
-        skM <- sequenceA skillMap
-        return $ sum (fmap (skillBonus abs') skM)
+body = elClass "div" "flexWrap" $ do
+    rec el "h1" $ text "Character Sheet"
+        abs <- inline $ grid abilityBlock
+        inline $ do
+            healthBlock abs cls
+            combatManuverBlock abs cls
+        cls <- inline classBlock
+    armorClass <- inline armorBlock
+    skillMap <- inline $ skillsBlock abs pathfinderSkills
     return ()
+    where inline = elClass "div" "inline"
 
 abilityBlock :: (MonadWidget t m) => m (Abilities (Dynamic t Int))
 abilityBlock = do
@@ -116,7 +111,7 @@ armorBlock = mdo
     armorVals <- grid $ do
         row $ lbl "name" >> lbl "ac"
         armorRows armorLines
-    addPressed <- button "Add"
+    addPressed <- el "div" $ button "Add"
     return . join $ dynSum <$> (fst <$$> armorVals)
     where dynSum = foldl (\dx dy -> (+) <$> dx <*> dy) (pure 0)
           removeEvents :: (Reflex t) => Dynamic t (M.Map k (b, Event t a)) -> (Event t a)
