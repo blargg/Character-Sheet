@@ -31,10 +31,6 @@ input {
     flex-wrap: wrap;
 }
 
-.inline {
-    display: inline-flex;
-}
-
 .grid {
     display: table;
     border-collapse: separate;

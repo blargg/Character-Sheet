@@ -38,16 +38,15 @@ body :: Widget x ()
 body = do
     el "h1" $ text "Character Sheet"
     rec abs <- flex $ do
-            abs <- inline $ grid abilityBlock
+            abs <- grid abilityBlock
             healthBlock abs cls
             combatManuverBlock abs cls
             return abs
-        cls <- inline classBlock
+        cls <- classBlock
     armorClass <- armorBlock
     skillMap <- skillsBlock abs pathfinderSkills
     return ()
-    where inline = elClass "div" "inline"
-          flex = elClass "div" "flexContainer"
+    where flex = elClass "div" "flexContainer"
 
 abilityBlock :: (MonadWidget t m) => m (Abilities (Dynamic t Int))
 abilityBlock = statBlock "Abilities" $ do
