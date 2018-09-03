@@ -35,20 +35,22 @@ header = do
     elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", "https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono")]) $ return ()
 
 body :: Widget x ()
-body = elClass "div" "flexWrap" $ do
-    rec el "h1" $ text "Character Sheet"
-        abs <- inline $ grid abilityBlock
-        inline $ do
+body = do
+    el "h1" $ text "Character Sheet"
+    rec abs <- flex $ do
+            abs <- inline $ grid abilityBlock
             healthBlock abs cls
             combatManuverBlock abs cls
+            return abs
         cls <- inline classBlock
-    armorClass <- inline armorBlock
-    skillMap <- inline $ skillsBlock abs pathfinderSkills
+    armorClass <- armorBlock
+    skillMap <- skillsBlock abs pathfinderSkills
     return ()
     where inline = elClass "div" "inline"
+          flex = elClass "div" "flexContainer"
 
 abilityBlock :: (MonadWidget t m) => m (Abilities (Dynamic t Int))
-abilityBlock = do
+abilityBlock = statBlock "Abilities" $ do
     row $ lbl "Ability" >> lbl "Score" >> lbl "Mod"
     Abilities <$> abilityDisplay "Str"
               <*> abilityDisplay "Dex"
@@ -65,7 +67,7 @@ abilityDisplay name = row $ do
     return abilityScore
 
 classBlock :: (MonadWidget t m) => m (ClassData (Dynamic t Int))
-classBlock = grid $ do
+classBlock = statBlock "Class" . grid $ do
     row $ lbl "Class Name" >> lbl "Level" >> lbl "HP" >> lbl "BAB" >> lbl "Fort" >> lbl "Ref" >> lbl "Will"
     row $ do
         className <- cell $ textInput def
@@ -80,7 +82,7 @@ classBlock = grid $ do
 
 -- displays current total health, temp hp, wounds, remaining health
 healthBlock :: (MonadWidget t m) => Abilities (Dynamic t Int) -> ClassData (Dynamic t Int) -> m ()
-healthBlock abs cls = grid $ do
+healthBlock abs cls = statBlock "Health" . grid $ do
     let hp = chHealthA abs cls
     row $ lbl "Max HP" >> lbl "Wounds" >> lbl "HP"
     row $ do
@@ -90,7 +92,7 @@ healthBlock abs cls = grid $ do
     where cellNum = cellClass "number"
 
 combatManuverBlock :: (MonadWidget t m) => Abilities (Dynamic t Int) -> ClassData (Dynamic t Int) -> m ()
-combatManuverBlock abs cls = grid $ do
+combatManuverBlock abs cls = statBlock "Combat Mnvr" . grid $ do
     row $ ct "CMB" >> cellNum (display cmb)
     row $ ct "CMD" >> cellNum (display cmd)
     where combatStats = do
@@ -104,7 +106,7 @@ combatManuverBlock abs cls = grid $ do
           cellNum = cellClass "number"
 
 armorBlock :: (MonadWidget t m) => m (Dynamic t Int)
-armorBlock = mdo
+armorBlock = statBlock "Armor" $ mdo
     let addLines = attachWith (\m _ -> nextKey m) (current armorLines) addPressed
         removeLines = removeEvents armorVals
     armorLines <- addRemoveSet (0 =: ()) addLines removeLines
@@ -144,7 +146,7 @@ armorRow = row $ do
 
 -- TODO: add some sort of filter to help find things quickly
 skillsBlock :: (MonadWidget t m) => Abilities (Dynamic t Int) -> M.Map Text Ability -> m (M.Map Text (Dynamic t Skill))
-skillsBlock abl statsConfig = grid $ do
+skillsBlock abl statsConfig = statBlock "Skills" . grid $ do
     row $ lbl "Skill" >> lbl "Ability" >> lbl "Class Skill" >> lbl "Ranks" >> lbl "misc. mod"
         >> lbl "total"
     M.traverseWithKey (skillLine abl) statsConfig

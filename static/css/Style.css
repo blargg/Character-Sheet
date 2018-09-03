@@ -2,7 +2,7 @@
 body {
     background-color: lightsteelblue;
     font-family: 'Roboto', sans-serif;
-    width: 1000px;
+    max-width: 1000px;
     margin: 0 auto;
 }
 
@@ -11,6 +11,10 @@ input {
     height: 15px; /* TODO should calculate the height */
     border: 0px;
     background-color: rgba(256, 256, 256, 0.85);
+}
+
+.blockHeader {
+    margin-bottom: 0px;
 }
 
 .numberInput {
