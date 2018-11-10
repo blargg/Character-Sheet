@@ -12,7 +12,6 @@ import Data.Semigroup ((<>))
 import Text.Read (readMaybe)
 
 import Data.Functor.Misc
-import GHCJS.DOM.Element
 import Reflex.Dom.Core
 import Reflex.Dom
 
@@ -38,16 +37,3 @@ parseInput :: MonadWidget t m => (T.Text -> Maybe a) -> TextInputConfig t -> m (
 parseInput parse config = do
     text <- textInput config
     return $ fmap parse $ value text
-
--- This is still experimental. The key event's aren't really sufficient to
--- detect when the span has changed in all cases.
-editSpan :: MonadWidget t m => Text -> m (Dynamic t Text)
-editSpan initialVal = do
-    (spanElement, _) <- elAttr' "span" ("contenteditable" =: "true") $ text initialVal
-    textUpdates initialVal spanElement
-
-textUpdates :: (Reflex t, MonadWidget t m) => Text -> El t -> m (Dynamic t Text)
-textUpdates initialVal element = do
-    textUpdates <- performEvent $ (getInnerHTML (_element_raw element)) <$ select' Input
-    holdDyn initialVal textUpdates
-    where select' ev = select (_element_events element) (WrapArg ev)

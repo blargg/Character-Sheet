@@ -6,7 +6,10 @@ build-type: Simple
 library
   hs-source-dirs: src
   build-depends: base,
-                 adjunctions
+                 adjunctions,
+                 containers,
+                 distributive,
+                 text
 
   exposed-modules:
     Common.Api

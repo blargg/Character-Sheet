@@ -6,25 +6,35 @@ build-type: Simple
 library
   hs-source-dirs: src
   build-depends: base
+               , adjunctions
                , common
+               , containers
+               , lens
+               , reflex
                , reflex-dom
                , static
                , text
                , lens
   exposed-modules:
     Frontend
-  ghc-options: -Wall
+    Frontend.Input
+    Frontend.Layout
+  -- ghc-options: -Wall
 
 executable frontend
   main-is: main.hs
   hs-source-dirs: src
   build-depends: base
+               , adjunctions
                , common
-               , reflex-dom
+               , containers
+               , frontend
                , ghcjs-dom
+               , lens
+               , reflex
+               , reflex-dom
                , static
                , text
-               , frontend
   --TODO: Make these ghc-options optional
   ghc-options: -threaded
   if os(darwin)
