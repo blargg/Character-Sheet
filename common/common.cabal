@@ -5,13 +5,16 @@ build-type: Simple
 
 library
   hs-source-dirs: src
-  build-depends: base,
-                 adjunctions,
-                 containers,
-                 distributive,
-                 text
+  build-depends: base
+               , adjunctions
+               , containers
+               , distributive
+               , mtl
+               , obelisk-route
+               , text
 
   exposed-modules:
     Common.Api
     Common.Compose
+    Common.Route
     Data.CharacterSheet

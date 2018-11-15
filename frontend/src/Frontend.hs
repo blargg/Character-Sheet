@@ -1,11 +1,14 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE TypeApplications #-}
 module Frontend where
 
 import Control.Monad (join)
+import Control.Monad.Trans (lift)
+import Control.Monad.Fix
 import Data.Functor.Rep
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -21,22 +24,36 @@ import Reflex.Dom
 import Reflex.Dom.Core
 
 import Common.Api
+import Common.Route
 import Common.Compose
 import Data.CharacterSheet
 import Frontend.Input
 import Frontend.Layout
-import Static
 
-frontend :: (StaticWidget x (), Widget x ())
-frontend = (header, body)
+import Obelisk.Generated.Static
+import Obelisk.Frontend
+import Obelisk.Route
+import Obelisk.Route.Frontend
 
-header :: StaticWidget x ()
+frontend :: Frontend (R FrontendRoute)
+frontend = Frontend
+  { _frontend_head = header
+  , _frontend_body = body
+  }
+
+header :: (DomBuilder t m) => m ()
 header = do
     el "title" $ text "Character Sheet"
     elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", static @"css/Style.css")]) $ return ()
     elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", "https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono")]) $ return ()
 
-body :: Widget x ()
+-- body :: ObeliskWidget t x route m => RoutedT t route m ()
+body :: ( DomBuilder t m
+        , PostBuild t m
+        , MonadHold t m
+        , MonadFix m
+        )
+        => m ()
 body = do
     el "h1" $ text "Character Sheet"
     abs <- grid abilityBlock
@@ -54,7 +71,10 @@ body = do
         return $ sum (fmap (skillBonus abs') skM)
     return ()
 
-abilityBlock :: (MonadWidget t m) => m (Abilities (Dynamic t Int))
+abilityBlock :: ( DomBuilder t m
+                , PostBuild t m
+                )
+                => m (Abilities (Dynamic t Int))
 abilityBlock = do
     row $ lbl "Ability" >> lbl "Score" >> lbl "Mod"
     Abilities <$> abilityDisplay "Str"
@@ -64,18 +84,22 @@ abilityBlock = do
               <*> abilityDisplay "Int"
               <*> abilityDisplay "Cha"
 
-abilityDisplay :: (MonadWidget t m) => T.Text -> m (Dynamic t Int)
+abilityDisplay :: ( DomBuilder t m
+                  , PostBuild t m
+                  ) => T.Text -> m (Dynamic t Int)
 abilityDisplay name = row $ do
     cell $ text name
     abilityScore <- cell $ fromMaybe 10 <$$> numberInput
     cellClass "number" $ display (abilityMod <$> abilityScore)
     return abilityScore
 
-classBlock :: (MonadWidget t m) => m (ClassData (Dynamic t Int))
+classBlock :: ( DomBuilder t m
+              , PostBuild t m
+              ) => m (ClassData (Dynamic t Int))
 classBlock = grid $ do
     row $ lbl "Class Name" >> lbl "Level" >> lbl "HP" >> lbl "BAB" >> lbl "Fort" >> lbl "Ref" >> lbl "Will"
     row $ do
-        className <- cell $ textInput def
+        className <- cell $ inputElement def
         levels <- cell numDefZero
         hp <- cell numDefZero
         baseAttackBonus <- cell numDefZero
@@ -86,7 +110,9 @@ classBlock = grid $ do
     where numDefZero = fromMaybe 0 <$$> numberInput
 
 -- displays current total health, temp hp, wounds, remaining health
-healthBlock :: (MonadWidget t m) => Abilities (Dynamic t Int) -> ClassData (Dynamic t Int) -> m ()
+healthBlock :: ( DomBuilder t m
+               , PostBuild t m
+               ) => Abilities (Dynamic t Int) -> ClassData (Dynamic t Int) -> m ()
 healthBlock abs cls = grid $ do
     let hp = chHealthA abs cls
     row $ lbl "Max HP" >> lbl "Wounds" >> lbl "HP"
@@ -96,7 +122,10 @@ healthBlock abs cls = grid $ do
         cellNum $ display ((-) <$> hp <*> wnds)
     where cellNum = cellClass "number"
 
-combatManuverBlock :: (MonadWidget t m) => Abilities (Dynamic t Int) -> ClassData (Dynamic t Int) -> m ()
+combatManuverBlock :: ( DomBuilder t m
+                      , PostBuild t m
+                      )
+                      => Abilities (Dynamic t Int) -> ClassData (Dynamic t Int) -> m ()
 combatManuverBlock abs cls = grid $ do
     row $ ct "CMB" >> cellNum (display cmb)
     row $ ct "CMD" >> cellNum (display cmd)
@@ -110,7 +139,12 @@ combatManuverBlock abs cls = grid $ do
           absMod = abilityMod <$$> abs
           cellNum = cellClass "number"
 
-armorBlock :: (MonadWidget t m) => m (Dynamic t Int)
+armorBlock :: ( DomBuilder t m
+              , MonadHold t m
+              , MonadFix m
+              , PostBuild t m
+              )
+              => m (Dynamic t Int)
 armorBlock = mdo
     let addLines = attachWith (\m _ -> nextKey m) (current armorLines) addPressed
         removeLines = attachWithMaybe (\m x -> maxKey m) (current armorLines) removePressed
@@ -136,28 +170,47 @@ lookupMax m | M.null m = Nothing
 -- TODO: move to a module
 -- TODO: may want a version that is specific to adding/removing the end of the
 -- set
-addRemoveSet :: (MonadWidget t m, Ord k) => M.Map k () -> Event t k -> Event t k -> m (Dynamic t (M.Map k ()))
+addRemoveSet :: ( MonadHold t m
+                , MonadFix m
+                , Reflex t
+                , Ord k
+                )
+                => M.Map k () -> Event t k -> Event t k -> m (Dynamic t (M.Map k ()))
 addRemoveSet initSet addItem removeItem = foldDyn addOrRemove initSet addRemoveE
     where addRemoveE = (Right <$> addItem) <> (Left <$> removeItem)
           addOrRemove (Right k) m = M.insert k () m
           addOrRemove (Left k) m = M.delete k m
 
-armorRows :: (MonadWidget t m) => Dynamic t (M.Map Int ()) -> m (Dynamic t (M.Map Int (Dynamic t Int)))
+armorRows :: ( DomBuilder t m
+            , PostBuild t m
+            , MonadHold t m
+            , MonadFix m
+            )
+            => Dynamic t (M.Map Int ()) -> m (Dynamic t (M.Map Int (Dynamic t Int)))
 armorRows lines = list lines (const armorRow)
 
-armorRow :: (MonadWidget t m) => m (Dynamic t Int)
+armorRow :: ( DomBuilder t m
+            , PostBuild t m
+            )
+            => m (Dynamic t Int)
 armorRow = row $ do
-    cell $ textInput def
+    cell $ inputElement def
     cell $ fromMaybe 0 <$$> numberInput
 
 -- TODO: add some sort of filter to help find things quickly
-skillsBlock :: (MonadWidget t m) => Abilities (Dynamic t Int) -> M.Map Text Ability -> m (M.Map Text (Dynamic t Skill))
+skillsBlock :: ( DomBuilder t m
+               , PostBuild t m
+               )
+               => Abilities (Dynamic t Int) -> M.Map Text Ability -> m (M.Map Text (Dynamic t Skill))
 skillsBlock abl statsConfig = grid $ do
     row $ lbl "Skill" >> lbl "Ability" >> lbl "Class Skill" >> lbl "Ranks" >> lbl "misc. mod"
         >> lbl "total"
     M.traverseWithKey (skillLine abl) statsConfig
 
-skillLine :: (MonadWidget t m) => Abilities (Dynamic t Int) -> Text -> Ability -> m (Dynamic t Skill)
+skillLine :: ( DomBuilder t m
+             , PostBuild t m
+             )
+             => Abilities (Dynamic t Int) -> Text -> Ability -> m (Dynamic t Skill)
 skillLine abls skillName abl = row $ do
     ct skillName
     ct . shortName $ abl
@@ -168,8 +221,8 @@ skillLine abls skillName abl = row $ do
     cellClass "number" $ display (skillBonus <$> sequenceA abls <*> sk)
     return sk
 
-ct :: (MonadWidget t m) => Text -> m ()
+ct :: (DomBuilder t m) => Text -> m ()
 ct = cell . text
 
-lbl :: (MonadWidget t m) => Text -> m ()
+lbl :: (DomBuilder t m) => Text -> m ()
 lbl = labelCell

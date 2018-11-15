@@ -10,20 +10,23 @@ library
                , common
                , containers
                , lens
+               , lens
+               , mtl
+               , obelisk-frontend
+               , obelisk-generated-static
+               , obelisk-route
                , reflex
                , reflex-dom
-               , static
                , text
-               , lens
   exposed-modules:
     Frontend
     Frontend.Input
     Frontend.Layout
-  -- ghc-options: -Wall
+  ghc-options: -Wall
 
 executable frontend
   main-is: main.hs
-  hs-source-dirs: src
+  hs-source-dirs: src-bin
   build-depends: base
                , adjunctions
                , common
@@ -32,8 +35,11 @@ executable frontend
                , ghcjs-dom
                , lens
                , reflex
+               , obelisk-frontend
+               , obelisk-route
                , reflex-dom
-               , static
+               , obelisk-generated-static
+               , frontend
                , text
   --TODO: Make these ghc-options optional
   ghc-options: -threaded

@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 module Frontend.Input where
@@ -18,22 +19,29 @@ import Reflex.Dom
 import Common.Api
 import Data.CharacterSheet
 
-numberInput :: (Read a, MonadWidget t m) => m (Dynamic t (Maybe a))
+numberInput :: ( Read a
+               , DomBuilder t m
+               , PostBuild t m
+               )
+               => m (Dynamic t (Maybe a))
 numberInput = parseInput parse numberConfig
     where
-        numberConfig = def & textInputConfig_inputType .~ "number"
-                           & textInputConfig_attributes .~ pure (classAttr "numberInput number")
+        numberConfig = def & inputElementConfig_elementConfig
+                           . elementConfig_initialAttributes
+                           .~ (classAttr "numberInput number")
         parse :: (Read a) => Text -> Maybe a
         parse = readMaybe . T.unpack
 
-type Attr = Map Text Text
+type Attr = Map AttributeName Text
 
 -- Constructs Attr for a class string.
 classAttr :: Text -> Attr
-classAttr classes = "class" =: classes
+classAttr classes = (AttributeName Nothing "class") =: classes
 
 -- TODO set a class depending on valid or invalid
-parseInput :: MonadWidget t m => (T.Text -> Maybe a) -> TextInputConfig t -> m (Dynamic t (Maybe a))
+parseInput :: ( DomBuilder t m
+              , PostBuild t m
+              ) => (T.Text -> Maybe a) -> InputElementConfig er t (DomBuilderSpace m) -> m (Dynamic t (Maybe a))
 parseInput parse config = do
-    text <- textInput config
+    text <- inputElement config
     return $ fmap parse $ value text
