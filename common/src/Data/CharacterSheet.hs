@@ -7,12 +7,10 @@
 module Data.CharacterSheet where
 
 import Data.Distributive
-import Data.Functor.Classes
 import Data.Functor.Identity
 import Data.Functor.Rep
 import qualified Data.Map as M
 import Data.Map (Map)
-import qualified Data.Text as T
 import Data.Text (Text)
 
 data Abilities a = Abilities { str :: a
@@ -25,12 +23,12 @@ data Abilities a = Abilities { str :: a
                              deriving (Functor, Foldable, Traversable, Show)
 
 instance Distributive Abilities where
-    distribute abs = Abilities (fmap str abs)
-                               (fmap dex abs)
-                               (fmap con abs)
-                               (fmap wis abs)
-                               (fmap int abs)
-                               (fmap cha abs)
+    distribute abl = Abilities (fmap str abl)
+                               (fmap dex abl)
+                               (fmap con abl)
+                               (fmap wis abl)
+                               (fmap int abl)
+                               (fmap cha abl)
 
 data Ability = Strength
              | Dexterity
@@ -41,7 +39,7 @@ data Ability = Strength
              deriving (Show)
 
 -- TODO tests
--- Estabilish a connection between (Abilities a) and (Ability -> a)
+-- Establish a connection between (Abilities a) and (Ability -> a)
 instance Representable Abilities where
     type Rep Abilities = Ability
 
@@ -59,7 +57,7 @@ instance Representable Abilities where
                            (f Intelligence)
                            (f Charisma)
 
-abilityMod :: (Integral a, Num a) => a -> a
+abilityMod :: (Integral a) => a -> a
 abilityMod score = (score - 10) `div` 2
 
 data ClassData a = ClassData { level :: a
@@ -71,15 +69,15 @@ data ClassData a = ClassData { level :: a
                              }
                              deriving (Functor, Foldable, Traversable, Show)
 
-chHealthA :: (Integral a, Num a, Applicative f) => Abilities (f a) -> ClassData (f a) -> (f a)
-chHealthA abs cls = do
-    con <-  (index abs Constitution)
+chHealthA :: (Integral a, Applicative f) => Abilities (f a) -> ClassData (f a) -> (f a)
+chHealthA abl cls = do
+    constitution <-  (index abl Constitution)
     lvls <- level cls
     clsHP <- classHealth cls
-    return $ (abilityMod con) * lvls + clsHP
+    return $ (abilityMod constitution) * lvls + clsHP
 
-chHealth :: (Integral a, Num a) => Abilities a -> ClassData a -> a
-chHealth abs cls = runIdentity $ chHealthA (Identity <$> abs) (Identity <$> cls)
+chHealth :: (Integral a) => Abilities a -> ClassData a -> a
+chHealth abl cls = runIdentity $ chHealthA (Identity <$> abl) (Identity <$> cls)
 
 
 shortName :: Ability -> Text

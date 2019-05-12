@@ -3,7 +3,6 @@ module Reflex.Util where
 import Reflex
 
 import Control.Monad.Fix
-import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Semigroup ((<>))
 

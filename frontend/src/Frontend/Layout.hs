@@ -2,10 +2,8 @@
 module Frontend.Layout where
 
 import Reflex.Dom.Core
-import Reflex.Dom
 
 import Data.Text (Text)
-import Data.Text as T
 
 grid :: (DomBuilder t m) => m a -> m a
 grid = elClass "div" "grid"
