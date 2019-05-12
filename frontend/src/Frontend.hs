@@ -17,11 +17,11 @@ import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
 import Text.Read (readMaybe)
-import Data.Semigroup ((<>))
 
 import Data.Functor.Misc
 import Reflex.Dom
 import Reflex.Dom.Core
+import Reflex.Util
 
 import Common.Api
 import Common.Route
@@ -56,26 +56,22 @@ body :: ( DomBuilder t m
         => m ()
 body = do
     el "h1" $ text "Character Sheet"
-    abs <- grid abilityBlock
-    display (sequenceA abs)
-    cls <- classBlock
-    el "p" $ display (sequenceA cls)
-    healthBlock abs cls
-    combatManuverBlock abs cls
+    rec abs <- flex $ do
+            abs <- abilityBlock
+            healthBlock abs cls
+            combatManuverBlock abs cls
+            return abs
+        cls <- classBlock
     armorClass <- armorBlock
-    el "p" $ display armorClass
     skillMap <- skillsBlock abs pathfinderSkills
-    el "p" $ display $ do
-        abs' <- sequenceA abs
-        skM <- sequenceA skillMap
-        return $ sum (fmap (skillBonus abs') skM)
     return ()
+    where flex = elClass "div" "flexContainer"
 
 abilityBlock :: ( DomBuilder t m
                 , PostBuild t m
                 )
                 => m (Abilities (Dynamic t Int))
-abilityBlock = do
+abilityBlock = statBlock "Abilities" . grid $ do
     row $ lbl "Ability" >> lbl "Score" >> lbl "Mod"
     Abilities <$> abilityDisplay "Str"
               <*> abilityDisplay "Dex"
@@ -96,7 +92,7 @@ abilityDisplay name = row $ do
 classBlock :: ( DomBuilder t m
               , PostBuild t m
               ) => m (ClassData (Dynamic t Int))
-classBlock = grid $ do
+classBlock = statBlock "Class" . grid $ do
     row $ lbl "Class Name" >> lbl "Level" >> lbl "HP" >> lbl "BAB" >> lbl "Fort" >> lbl "Ref" >> lbl "Will"
     row $ do
         className <- cell $ inputElement def
@@ -113,7 +109,7 @@ classBlock = grid $ do
 healthBlock :: ( DomBuilder t m
                , PostBuild t m
                ) => Abilities (Dynamic t Int) -> ClassData (Dynamic t Int) -> m ()
-healthBlock abs cls = grid $ do
+healthBlock abs cls = statBlock "Health" . grid $ do
     let hp = chHealthA abs cls
     row $ lbl "Max HP" >> lbl "Wounds" >> lbl "HP"
     row $ do
@@ -126,7 +122,7 @@ combatManuverBlock :: ( DomBuilder t m
                       , PostBuild t m
                       )
                       => Abilities (Dynamic t Int) -> ClassData (Dynamic t Int) -> m ()
-combatManuverBlock abs cls = grid $ do
+combatManuverBlock abs cls = statBlock "Combat Mnvr" . grid $ do
     row $ ct "CMB" >> cellNum (display cmb)
     row $ ct "CMD" >> cellNum (display cmd)
     where combatStats = do
@@ -145,17 +141,18 @@ armorBlock :: ( DomBuilder t m
               , PostBuild t m
               )
               => m (Dynamic t Int)
-armorBlock = mdo
+armorBlock = statBlock "Armor" $ mdo
     let addLines = attachWith (\m _ -> nextKey m) (current armorLines) addPressed
-        removeLines = attachWithMaybe (\m x -> maxKey m) (current armorLines) removePressed
+        removeLines = removeEvents armorVals
     armorLines <- addRemoveSet (0 =: ()) addLines removeLines
     armorVals <- grid $ do
         row $ lbl "name" >> lbl "ac"
         armorRows armorLines
-    addPressed <- button "Add"
-    removePressed <- button "Remove"
-    return . join $ dynSum <$> armorVals
+    addPressed <- el "div" $ button "Add"
+    return . join $ dynSum <$> (fst <$$> armorVals)
     where dynSum = foldl (\dx dy -> (+) <$> dx <*> dy) (pure 0)
+          removeEvents :: (Reflex t) => Dynamic t (M.Map k (b, Event t a)) -> (Event t a)
+          removeEvents x = switchPromptlyDyn $ leftmost . fmap (snd . snd) . M.toList <$> x
 
 nextKey :: (Ord k, Num k) => M.Map k a -> k
 nextKey = (1+) . fromMaybe 0 . maxKey
@@ -167,42 +164,36 @@ lookupMax :: M.Map k a -> Maybe (k, a)
 lookupMax m | M.null m = Nothing
             | otherwise = Just (M.findMax m)
 
--- TODO: move to a module
--- TODO: may want a version that is specific to adding/removing the end of the
--- set
-addRemoveSet :: ( MonadHold t m
-                , MonadFix m
-                , Reflex t
-                , Ord k
-                )
-                => M.Map k () -> Event t k -> Event t k -> m (Dynamic t (M.Map k ()))
-addRemoveSet initSet addItem removeItem = foldDyn addOrRemove initSet addRemoveE
-    where addRemoveE = (Right <$> addItem) <> (Left <$> removeItem)
-          addOrRemove (Right k) m = M.insert k () m
-          addOrRemove (Left k) m = M.delete k m
-
 armorRows :: ( DomBuilder t m
             , PostBuild t m
             , MonadHold t m
             , MonadFix m
             )
-            => Dynamic t (M.Map Int ()) -> m (Dynamic t (M.Map Int (Dynamic t Int)))
-armorRows lines = list lines (const armorRow)
+            => Dynamic t (M.Map Int ()) -> m (Dynamic t (M.Map Int (Dynamic t Int, Event t Int)))
+armorRows lines = listWithKey lines keyedArmorRow
+
+keyedArmorRow :: (DomBuilder t m
+                , PostBuild t m) => Int -> a -> m (Dynamic t Int, Event t Int)
+keyedArmorRow key  _ = do
+          (v, ev) <- armorRow
+          return (v, key <$ ev)
 
 armorRow :: ( DomBuilder t m
             , PostBuild t m
             )
-            => m (Dynamic t Int)
+            => m (Dynamic t Int, Event t ())
 armorRow = row $ do
     cell $ inputElement def
-    cell $ fromMaybe 0 <$$> numberInput
+    armorVal <- cell $ fromMaybe 0 <$$> numberInput
+    delEvent <- button "delete line"
+    return (armorVal, delEvent)
 
 -- TODO: add some sort of filter to help find things quickly
 skillsBlock :: ( DomBuilder t m
                , PostBuild t m
                )
                => Abilities (Dynamic t Int) -> M.Map Text Ability -> m (M.Map Text (Dynamic t Skill))
-skillsBlock abl statsConfig = grid $ do
+skillsBlock abl statsConfig = statBlock "Skills" . grid $ do
     row $ lbl "Skill" >> lbl "Ability" >> lbl "Class Skill" >> lbl "Ranks" >> lbl "misc. mod"
         >> lbl "total"
     M.traverseWithKey (skillLine abl) statsConfig

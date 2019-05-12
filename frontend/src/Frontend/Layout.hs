@@ -21,3 +21,8 @@ cellClass cl = elClass "div" ("cell " `mappend` cl)
 
 labelCell :: (DomBuilder t m) => Text -> m ()
 labelCell = cellClass "label" . text
+
+statBlock :: (DomBuilder t m) => Text -> m a -> m a
+statBlock title innerWidget = elClass "div" "statBlock" $ do
+    elClass "h3" "blockHeader" $ text title
+    innerWidget
