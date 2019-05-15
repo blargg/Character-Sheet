@@ -16,4 +16,3 @@ addRemoveSet initSet addItem removeItem = foldDyn addOrRemove initSet addRemoveE
     where addRemoveE = (Right <$> addItem) <> (Left <$> removeItem)
           addOrRemove (Right k) m = M.insert k () m
           addOrRemove (Left k) m = M.delete k m
-

@@ -18,4 +18,3 @@ library
     Common.Compose
     Common.Route
     Data.CharacterSheet
-    Reflex.Util
