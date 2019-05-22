@@ -22,14 +22,16 @@ import Data.CharacterSheet
 import Frontend.Input
 import Frontend.Layout
 
+import Obelisk.Route.Frontend
 import Obelisk.Generated.Static
 import Obelisk.Frontend
-import Obelisk.Route
 
 frontend :: Frontend (R FrontendRoute)
 frontend = Frontend
   { _frontend_head = header
-  , _frontend_body = body
+  , _frontend_body = subRoute_ $ \x -> case x of
+    FrontendRoute_Main -> sheet_body
+    FrontendRoute_About -> about_page
   }
 
 header :: (DomBuilder t m) => m ()
@@ -38,14 +40,47 @@ header = do
     elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", static @"css/Style.css")]) $ return ()
     elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", "https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono")]) $ return ()
 
+about_page :: (DomBuilder t m
+             , SetRoute t (R FrontendRoute) m
+             , RouteToUrl (R FrontendRoute) m
+              )
+             => m ()
+about_page = do
+    el "div" $ routeLink (FrontendRoute_Main :/ ()) $ text "sheet"
+    el "h1" $ text "About"
+    el "p" $ text "GitHub: " >> urlLink projectURL "project page"
+    el "h2" $ text "Caution"
+    el "p" $ text "This website is experimental, and provided as is. \
+        \This is not meant to hold onto a character sheet long term, \
+        \and data might get lost over time. \
+        \(As of writing, data is not saved after you leave the page.) \
+        \Please copy down anything that you will need later."
+    el "h2" $ text "Helping Out"
+    el "p" $ do
+        text "If you like this project, consider contributing "
+        urlLink projectURL "code changes"
+        text ", "
+        urlLink issuesURL "suggestions"
+        text ", or "
+        urlLink issuesURL "bug reports"
+        text " on the project page."
+        where projectURL = "https://github.com/blargg/Character-Sheet"
+              issuesURL = projectURL <> "/issues"
+
+urlLink :: DomBuilder t m => Text -> Text -> m ()
+urlLink url displayText = elAttr "a" ("href" =: url) (text displayText)
+
 -- body :: ObeliskWidget t x route m => RoutedT t route m ()
-body :: ( DomBuilder t m
-        , PostBuild t m
-        , MonadHold t m
-        , MonadFix m
-        )
-        => m ()
-body = do
+sheet_body :: ( DomBuilder t m
+              , PostBuild t m
+              , MonadHold t m
+              , MonadFix m
+              , SetRoute t (R FrontendRoute) m
+              , RouteToUrl (R FrontendRoute) m
+              )
+              => m ()
+sheet_body = do
+    el "div" $ routeLink (FrontendRoute_About :/ ()) $ text "about"
     el "h1" $ text "Character Sheet"
     rec abl <- flex $ do
             abl' <- abilityBlock
