@@ -22,6 +22,7 @@ import Data.CharacterSheet
 import Frontend.Input
 import Frontend.Layout
 import qualified Frontend.About as About
+import qualified Frontend.Elements as E
 
 import Obelisk.Route.Frontend
 import Obelisk.Generated.Static
@@ -30,10 +31,37 @@ import Obelisk.Frontend
 frontend :: Frontend (R FrontendRoute)
 frontend = Frontend
   { _frontend_head = header
-  , _frontend_body = subRoute_ $ \x -> case x of
+  , _frontend_body = body
+  }
+
+body :: ( DomBuilder t m
+        , PostBuild t m
+        , MonadHold t m
+        , MonadFix m
+        , SetRoute t (R FrontendRoute) m
+        , RouteToUrl (R FrontendRoute) m
+        )
+     => RoutedT t (R FrontendRoute) m ()
+body = subRoute_ $ \x -> navigation x $ case x of
     FrontendRoute_Main -> sheet_body
     FrontendRoute_About -> About.main
-  }
+
+navigation :: ( DomBuilder t m
+              , RouteToUrl (R FrontendRoute) m
+              , SetRoute t (R FrontendRoute) m
+              )
+              => FrontendRoute x -> m a -> m a
+navigation currentRoute content = do
+    E.divC "topnav" $ do
+        navItem FrontendRoute_Main
+        navItem FrontendRoute_About
+    E.divC "main" content
+
+navItem :: ( DomBuilder t m
+           , RouteToUrl (R FrontendRoute) m
+           , SetRoute t (R FrontendRoute) m)
+           => FrontendRoute () -> m ()
+navItem linkTo = E.divC "nav-item" $ routeLink (linkTo :/ ()) $ text (pageName linkTo)
 
 header :: (DomBuilder t m) => m ()
 header = do
@@ -46,12 +74,9 @@ sheet_body :: ( DomBuilder t m
               , PostBuild t m
               , MonadHold t m
               , MonadFix m
-              , SetRoute t (R FrontendRoute) m
-              , RouteToUrl (R FrontendRoute) m
               )
               => m ()
 sheet_body = do
-    el "div" $ routeLink (FrontendRoute_About :/ ()) $ text "about"
     el "h1" $ text "Character Sheet"
     rec abl <- flex $ do
             abl' <- abilityBlock

@@ -3,17 +3,10 @@
 module Frontend.About where
 
 import Reflex.Dom
-import Obelisk.Route.Frontend
-import Common.Route
 import qualified Frontend.Elements as EL
 
-main :: (DomBuilder t m
-             , SetRoute t (R FrontendRoute) m
-             , RouteToUrl (R FrontendRoute) m
-              )
-             => m ()
+main :: DomBuilder t m => m ()
 main = do
-    el "div" $ routeLink (FrontendRoute_Main :/ ()) $ text "sheet"
     el "h1" $ text "About"
     el "p" $ text "GitHub: " >> EL.urlLink projectURL "project page"
     el "h2" $ text "Caution"

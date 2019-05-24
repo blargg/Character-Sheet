@@ -2,7 +2,11 @@
 body {
     background-color: lightsteelblue;
     font-family: 'Roboto', sans-serif;
-    max-width: 1000px;
+    margin: 0px;
+}
+
+div.main {
+    max-width: 500px;
     margin: 0 auto;
     padding: 1em;
 }
@@ -12,6 +16,27 @@ input {
     height: 15px; /* TODO should calculate the height */
     border: 0px;
     background-color: rgba(256, 256, 256, 0.85);
+}
+
+/* Navigation */
+.topnav {
+    width: 100%;
+    background-color: #789;
+}
+
+div.nav-item {
+    display: inline-block;
+    padding: 8px;
+    background-origin: padding-box;
+}
+
+div.nav-item>a {
+    color: white;
+    text-decoration: none;
+}
+
+div.nav-item:hover {
+    background-color: #567;
 }
 
 .blockHeader {
