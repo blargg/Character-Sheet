@@ -53,15 +53,18 @@ navigation :: ( DomBuilder t m
               => FrontendRoute x -> m a -> m a
 navigation currentRoute content = do
     E.divC "topnav" $ do
-        navItem FrontendRoute_Main
-        navItem FrontendRoute_About
+        navItem' FrontendRoute_Main
+        navItem' FrontendRoute_About
     E.divC "main" content
+        where navItem' route = navItem (samePage currentRoute route) route
 
 navItem :: ( DomBuilder t m
            , RouteToUrl (R FrontendRoute) m
            , SetRoute t (R FrontendRoute) m)
-           => FrontendRoute () -> m ()
-navItem linkTo = E.divC "nav-item" $ routeLink (linkTo :/ ()) $ text (pageName linkTo)
+           => Bool -> FrontendRoute () -> m ()
+navItem selected linkTo = E.divC cl $ routeLink (linkTo :/ ()) $ text (pageName linkTo)
+    where cl = if selected then "nav-item selected"
+                           else "nav-item"
 
 header :: (DomBuilder t m) => m ()
 header = do

@@ -30,13 +30,17 @@ div.nav-item {
     background-origin: padding-box;
 }
 
+div.nav-item:hover {
+    background-color: #567;
+}
+
+div.nav-item.selected {
+    background-color: #000;
+}
+
 div.nav-item>a {
     color: white;
     text-decoration: none;
-}
-
-div.nav-item:hover {
-    background-color: #567;
 }
 
 .blockHeader {
