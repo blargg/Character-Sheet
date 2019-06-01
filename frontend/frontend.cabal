@@ -23,6 +23,9 @@ library
     Frontend.Input
     Frontend.Layout
     Reflex.Util
+  other-modules:
+    Frontend.About
+    Frontend.Elements
   ghc-options: -Wall
 
 executable frontend
