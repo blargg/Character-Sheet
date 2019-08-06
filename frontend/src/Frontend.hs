@@ -8,6 +8,7 @@ module Frontend where
 
 import Control.Monad (join)
 import Control.Monad.Fix
+import Control.Monad.IO.Class
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Map as M
@@ -34,17 +35,44 @@ frontend = Frontend
   , _frontend_body = body
   }
 
+ioAction :: MonadIO m => m ()
+ioAction = liftIO (putStrLn "IO action performed")
+
 body :: ( DomBuilder t m
         , PostBuild t m
         , MonadHold t m
         , MonadFix m
         , SetRoute t (R FrontendRoute) m
         , RouteToUrl (R FrontendRoute) m
+        , Prerender js t m
         )
      => RoutedT t (R FrontendRoute) m ()
-body = subRoute_ $ \x -> navigation x $ case x of
-    FrontendRoute_Main -> sheet_body
-    FrontendRoute_About -> About.main
+body = subRoute_ $ \x -> do
+    fullThing
+    navigation x $ case x of
+        FrontendRoute_Main -> sheet_body
+        FrontendRoute_About -> About.main
+
+fullThing :: ( Prerender js t m
+             , DomBuilder t m
+             )
+        => m ()
+fullThing = prerender_ buttonWidget buttonWidgetJS
+
+buttonWidget :: ( DomBuilder t m
+                )
+                => m ()
+buttonWidget = () <$ button "Start Event"
+
+buttonWidgetJS :: ( DomBuilder t m
+                  , PerformEvent t m
+                  , MonadIO (Performable m)
+                  )
+                  => m ()
+buttonWidgetJS = do
+    btnPress <- button "Start Event"
+    performEvent_ (fmap (const ioAction) btnPress)
+    return ()
 
 navigation :: ( DomBuilder t m
               , RouteToUrl (R FrontendRoute) m
