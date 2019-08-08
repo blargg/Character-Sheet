@@ -4,11 +4,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE TypeApplications #-}
-module Frontend where
+module Frontend (frontend) where
 
 import Control.Monad (join)
 import Control.Monad.Fix
-import Control.Monad.IO.Class
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Map as M
@@ -29,17 +28,30 @@ import Obelisk.Route.Frontend
 import Obelisk.Generated.Static
 import Obelisk.Frontend
 
+import Language.Javascript.JSaddle
+import Control.Lens ((^.))
+
 frontend :: Frontend (R FrontendRoute)
 frontend = Frontend
   { _frontend_head = header
   , _frontend_body = body
   }
 
-ioAction :: MonadIO m => m ()
-ioAction = liftIO (putStrLn "IO action performed")
+saveLocal :: Text -> Text -> JSM ()
+saveLocal key msg = do
+  jsg ("window" :: Text)
+    ^. js ("localStorage" :: Text)
+    ^. jss key [msg]
+  return ()
+
+getLocal :: Text -> JSM (Maybe Text)
+getLocal key = do
+  jsv <- jsg ("window" :: Text)
+    ^. js ("localStorage" :: Text)
+    ^. js key
+  liftJSM (fromJSVal jsv)
 
 body :: ( DomBuilder t m
-        , PostBuild t m
         , MonadHold t m
         , MonadFix m
         , SetRoute t (R FrontendRoute) m
@@ -48,31 +60,9 @@ body :: ( DomBuilder t m
         )
      => RoutedT t (R FrontendRoute) m ()
 body = subRoute_ $ \x -> do
-    fullThing
     navigation x $ case x of
-        FrontendRoute_Main -> sheet_body
+        FrontendRoute_Main -> prerender_ (text "loading") sheet_body
         FrontendRoute_About -> About.main
-
-fullThing :: ( Prerender js t m
-             , DomBuilder t m
-             )
-        => m ()
-fullThing = prerender_ buttonWidget buttonWidgetJS
-
-buttonWidget :: ( DomBuilder t m
-                )
-                => m ()
-buttonWidget = () <$ button "Start Event"
-
-buttonWidgetJS :: ( DomBuilder t m
-                  , PerformEvent t m
-                  , MonadIO (Performable m)
-                  )
-                  => m ()
-buttonWidgetJS = do
-    btnPress <- button "Start Event"
-    performEvent_ (fmap (const ioAction) btnPress)
-    return ()
 
 navigation :: ( DomBuilder t m
               , RouteToUrl (R FrontendRoute) m
@@ -105,6 +95,9 @@ sheet_body :: ( DomBuilder t m
               , PostBuild t m
               , MonadHold t m
               , MonadFix m
+              , PerformEvent t m
+              , MonadJSM m
+              , MonadJSM (Performable m)
               )
               => m ()
 sheet_body = do
@@ -120,25 +113,41 @@ sheet_body = do
     return ()
     where flex = elClass "div" "flexContainer"
 
+-- TODO debounce
+saveDyn :: (Show a, PerformEvent t m, MonadJSM (Performable m)) => Text -> Dynamic t a -> m ()
+saveDyn key dynVal = performEvent_ (liftJSM . saveLocal key . T.pack <$> serializedValues)
+    where serializedValues = show <$> updated dynVal
+
 abilityBlock :: ( DomBuilder t m
                 , PostBuild t m
+                , PerformEvent t m
+                , MonadJSM m
+                , MonadJSM (Performable m)
                 )
                 => m (Abilities (Dynamic t Int))
 abilityBlock = statBlock "Abilities" . grid $ do
+    initVals <- fmap parseM $ liftJSM . getLocal $ ("ability-section" :: Text)
     row $ lbl "Ability" >> lbl "Score" >> lbl "Mod"
-    Abilities <$> abilityDisplay "Str"
-              <*> abilityDisplay "Dex"
-              <*> abilityDisplay "Con"
-              <*> abilityDisplay "Wis"
-              <*> abilityDisplay "Int"
-              <*> abilityDisplay "Cha"
+    abl <- Abilities <$> abilityDisplay (str initVals) "Str"
+              <*> abilityDisplay (dex initVals) "Dex"
+              <*> abilityDisplay (con initVals) "Con"
+              <*> abilityDisplay (wis initVals) "Wis"
+              <*> abilityDisplay (int initVals) "Int"
+              <*> abilityDisplay (cha initVals) "Cha"
+    saveDyn "ability-section" (sequenceA abl)
+    return abl
+        where parseM :: Maybe Text -> Abilities Int
+              -- parseM = fmap (read . T.unpack) ?? defaultAbilities
+              parseM = maybe defaultAbilities (read . T.unpack)
+              defaultAbilities :: Abilities Int
+              defaultAbilities = pure 10
 
 abilityDisplay :: ( DomBuilder t m
                   , PostBuild t m
-                  ) => T.Text -> m (Dynamic t Int)
-abilityDisplay name = row $ do
+                  ) => Int -> T.Text -> m (Dynamic t Int)
+abilityDisplay initialValue name = row $ do
     cell $ text name
-    abilityScore <- cell $ fromMaybe 10 <$$> numberInput
+    abilityScore <- cell $ fromMaybe 10 <$$> numberInput initialValue
     cellClass "number" $ display (abilityMod <$> abilityScore)
     return abilityScore
 
@@ -155,7 +164,7 @@ classBlock = statBlock "Class" . grid $ do
         refSave <- cell numDefZero
         willSave <- cell numDefZero
         return $ ClassData levels baseAttackBonus fortSave refSave willSave hp
-    where numDefZero = fromMaybe 0 <$$> numberInput
+    where numDefZero = fromMaybe 0 <$$> numberInput 0
 
 -- displays current total health, temp hp, wounds, remaining health
 healthBlock :: ( DomBuilder t m
@@ -166,7 +175,7 @@ healthBlock abl cls = statBlock "Health" . grid $ do
     row $ lbl "Max HP" >> lbl "Wounds" >> lbl "HP"
     row $ do
         cellNum (display hp)
-        wnds <- cell $ fromMaybe 0 <$$> numberInput
+        wnds <- cell $ fromMaybe 0 <$$> numberInput 0
         cellNum $ display ((-) <$> hp <*> wnds)
     where cellNum = cellClass "number"
 
@@ -234,7 +243,7 @@ armorRow :: (DomBuilder t m)
             => m (Dynamic t Int, Event t ())
 armorRow = row $ do
     _ <- cell $ inputElement def
-    armorVal <- cell $ fromMaybe 0 <$$> numberInput
+    armorVal <- cell $ fromMaybe 0 <$$> numberInput 0
     delEvent <- button "delete line"
     return (armorVal, delEvent)
 
@@ -256,8 +265,8 @@ skillLine abls skillTitle abl = row $ do
     ct skillTitle
     ct . shortName $ abl
     classCB <- cell $ checkbox False def
-    ranks <- cell $ fromMaybe 0 <$$> numberInput
-    miscMod <- cell $ fromMaybe 0 <$$> numberInput
+    ranks <- cell $ fromMaybe 0 <$$> numberInput 0
+    miscMod <- cell $ fromMaybe 0 <$$> numberInput 0
     let sk = Skill <$> pure skillTitle <*> value classCB <*> pure abl <*> ranks <*> miscMod
     cellClass "number" $ display (skillBonus <$> sequenceA abls <*> sk)
     return sk

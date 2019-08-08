@@ -20,7 +20,12 @@ data Abilities a = Abilities { str :: a
                              , int :: a
                              , cha :: a
                              }
-                             deriving (Functor, Foldable, Traversable, Show)
+                             deriving (Functor, Foldable, Traversable, Show, Read)
+
+instance Applicative Abilities where
+    pure x = Abilities x x x x x x
+    (Abilities s1 d1 c1 w1 i1 h1) <*> (Abilities s2 d2 c2 w2 i2 h2) =
+        Abilities (s1 s2) (d1 d2) (c1 c2) (w1 w2) (i1 i2) (h1 h2)
 
 instance Distributive Abilities where
     distribute abl = Abilities (fmap str abl)
