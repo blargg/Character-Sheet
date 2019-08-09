@@ -242,26 +242,33 @@ armorRow = row $ do
     delEvent <- button "delete line"
     return (armorVal, delEvent)
 
--- TODO: add some sort of filter to help find things quickly
 skillsBlock :: ( DomBuilder t m
                , PostBuild t m
+               , PerformEvent t m
+               , MonadJSM (Performable m)
+               , MonadJSM m
                )
                => Abilities (Dynamic t Int) -> M.Map Text Ability -> m (M.Map Text (Dynamic t Skill))
 skillsBlock abl statsConfig = statBlock "Skills" . grid $ do
+    initialSkillMap <- fmap readM . liftJSM $ getLocal K.Skill
     row $ lbl "Skill" >> lbl "Ability" >> lbl "Class Skill" >> lbl "Ranks" >> lbl "misc. mod"
         >> lbl "total"
-    M.traverseWithKey (skillLine abl) statsConfig
+    dSkillMap <- M.traverseWithKey (skillLine abl initialSkillMap) statsConfig
+    saveDyn K.Skill (sequenceA dSkillMap)
+    return dSkillMap
+        where readM mText = fromMaybe (blankSkill <$ statsConfig) (join $ readMaybe . T.unpack <$> mText)
 
 skillLine :: ( DomBuilder t m
              , PostBuild t m
              )
-             => Abilities (Dynamic t Int) -> Text -> Ability -> m (Dynamic t Skill)
-skillLine abls skillTitle abl = row $ do
+             => Abilities (Dynamic t Int) -> M.Map Text Skill -> Text -> Ability -> m (Dynamic t Skill)
+skillLine abls initSkillMap skillTitle abl = row $ do
+    let initSkill = fromMaybe blankSkill (M.lookup skillTitle initSkillMap)
     ct skillTitle
     ct . shortName $ abl
-    classCB <- cell $ checkbox False def
-    ranks <- cell $ fromMaybe 0 <$$> numberInput 0
-    miscMod <- cell $ fromMaybe 0 <$$> numberInput 0
+    classCB <- cell $ checkbox (isClassSkill initSkill) def
+    ranks <- cell $ fromMaybe 0 <$$> numberInput (skillRanks initSkill)
+    miscMod <- cell $ fromMaybe 0 <$$> numberInput (skillMod initSkill)
     let sk = Skill <$> pure skillTitle <*> value classCB <*> pure abl <*> ranks <*> miscMod
     cellClass "number" $ display (skillBonus <$> sequenceA abls <*> sk)
     return sk

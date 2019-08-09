@@ -125,6 +125,14 @@ data Skill = Skill { skillName :: Text
                    }
                    deriving (Read, Show)
 
+blankSkill :: Skill
+blankSkill = Skill { skillName = ""
+                   , isClassSkill = False
+                   , abilityType = Strength
+                   , skillRanks = 0
+                   , skillMod = 0
+                   }
+
 classSkillBonus :: Skill -> Int
 classSkillBonus sk | skillRanks sk > 0 && isClassSkill sk = 4
                    | otherwise                            = 0
