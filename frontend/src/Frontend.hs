@@ -12,6 +12,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
+import Text.Read (readMaybe)
 
 import Reflex.Dom
 import Reflex.Util
@@ -21,6 +22,8 @@ import Common.Compose
 import Data.CharacterSheet
 import Frontend.Input
 import Frontend.Layout
+import Frontend.Storage hiding (StorageKey(..))
+import qualified Frontend.Storage as K
 import qualified Frontend.About as About
 import qualified Frontend.Elements as E
 
@@ -29,27 +32,12 @@ import Obelisk.Generated.Static
 import Obelisk.Frontend
 
 import Language.Javascript.JSaddle
-import Control.Lens ((^.))
 
 frontend :: Frontend (R FrontendRoute)
 frontend = Frontend
   { _frontend_head = header
   , _frontend_body = body
   }
-
-saveLocal :: Text -> Text -> JSM ()
-saveLocal key msg = do
-  jsg ("window" :: Text)
-    ^. js ("localStorage" :: Text)
-    ^. jss key [msg]
-  return ()
-
-getLocal :: Text -> JSM (Maybe Text)
-getLocal key = do
-  jsv <- jsg ("window" :: Text)
-    ^. js ("localStorage" :: Text)
-    ^. js key
-  liftJSM (fromJSVal jsv)
 
 body :: ( DomBuilder t m
         , MonadHold t m
@@ -90,13 +78,12 @@ header = do
     elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", static @"css/Style.css")]) $ return ()
     elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", "https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono")]) $ return ()
 
--- body :: ObeliskWidget t x route m => RoutedT t route m ()
 sheet_body :: ( DomBuilder t m
               , PostBuild t m
               , MonadHold t m
               , MonadFix m
-              , PerformEvent t m
               , MonadJSM m
+              , PerformEvent t m
               , MonadJSM (Performable m)
               )
               => m ()
@@ -113,20 +100,15 @@ sheet_body = do
     return ()
     where flex = elClass "div" "flexContainer"
 
--- TODO debounce
-saveDyn :: (Show a, PerformEvent t m, MonadJSM (Performable m)) => Text -> Dynamic t a -> m ()
-saveDyn key dynVal = performEvent_ (liftJSM . saveLocal key . T.pack <$> serializedValues)
-    where serializedValues = show <$> updated dynVal
-
 abilityBlock :: ( DomBuilder t m
                 , PostBuild t m
-                , PerformEvent t m
                 , MonadJSM m
+                , PerformEvent t m
                 , MonadJSM (Performable m)
                 )
                 => m (Abilities (Dynamic t Int))
 abilityBlock = statBlock "Abilities" . grid $ do
-    initVals <- fmap parseM $ liftJSM . getLocal $ ("ability-section" :: Text)
+    initVals <- fmap readM . liftJSM $ getLocal K.Abilities
     row $ lbl "Ability" >> lbl "Score" >> lbl "Mod"
     abl <- Abilities <$> abilityDisplay (str initVals) "Str"
               <*> abilityDisplay (dex initVals) "Dex"
@@ -134,13 +116,11 @@ abilityBlock = statBlock "Abilities" . grid $ do
               <*> abilityDisplay (wis initVals) "Wis"
               <*> abilityDisplay (int initVals) "Int"
               <*> abilityDisplay (cha initVals) "Cha"
-    saveDyn "ability-section" (sequenceA abl)
+    saveDyn K.Abilities (sequenceA abl)
     return abl
-        where parseM :: Maybe Text -> Abilities Int
-              -- parseM = fmap (read . T.unpack) ?? defaultAbilities
-              parseM = maybe defaultAbilities (read . T.unpack)
-              defaultAbilities :: Abilities Int
-              defaultAbilities = pure 10
+        where
+            readM :: Maybe Text -> Abilities Int
+            readM mtext = fromMaybe (pure 10) (join $ readMaybe . T.unpack <$> mtext)
 
 abilityDisplay :: ( DomBuilder t m
                   , PostBuild t m
@@ -151,33 +131,48 @@ abilityDisplay initialValue name = row $ do
     cellClass "number" $ display (abilityMod <$> abilityScore)
     return abilityScore
 
-classBlock :: (DomBuilder t m)
+classBlock :: (DomBuilder t m
+              ,MonadJSM m
+              ,PerformEvent t m
+              ,MonadJSM (Performable m)
+              )
            => m (ClassData (Dynamic t Int))
 classBlock = statBlock "Class" . grid $ do
+    mCls <- liftJSM $ getLocal K.Class
+    let cls = readM mCls
     row $ lbl "Class Name" >> lbl "Level" >> lbl "HP" >> lbl "BAB" >> lbl "Fort" >> lbl "Ref" >> lbl "Will"
-    row $ do
+    dynCls <- row $ do
         _ <- cell $ inputElement def -- class name
-        levels <- cell numDefZero
-        hp <- cell numDefZero
-        baseAttackBonus <- cell numDefZero
-        fortSave <- cell numDefZero
-        refSave <- cell numDefZero
-        willSave <- cell numDefZero
+        levels <- cell $ numDefZero (level cls)
+        hp <- cell $ numDefZero (classHealth cls)
+        baseAttackBonus <- cell $ numDefZero (bab cls)
+        fortSave <- cell $ numDefZero (fortitude cls)
+        refSave <- cell $ numDefZero (reflex cls)
+        willSave <- cell $ numDefZero (will cls)
         return $ ClassData levels baseAttackBonus fortSave refSave willSave hp
-    where numDefZero = fromMaybe 0 <$$> numberInput 0
+    saveDyn K.Class (sequenceA dynCls)
+    return dynCls
+    where numDefZero initVal = fromMaybe 0 <$$> numberInput initVal
+          readM mtext = fromMaybe blankClass (join $ readMaybe . T.unpack <$> mtext)
 
 -- displays current total health, temp hp, wounds, remaining health
 healthBlock :: ( DomBuilder t m
                , PostBuild t m
+               , PerformEvent t m
+               , MonadJSM m
+               , MonadJSM (Performable m)
                ) => Abilities (Dynamic t Int) -> ClassData (Dynamic t Int) -> m ()
 healthBlock abl cls = statBlock "Health" . grid $ do
     let hp = chHealthA abl cls
     row $ lbl "Max HP" >> lbl "Wounds" >> lbl "HP"
     row $ do
         cellNum (display hp)
-        wnds <- cell $ fromMaybe 0 <$$> numberInput 0
+        initialWounds <- fmap readM . liftJSM $ getLocal K.Health
+        wnds <- cell $ fromMaybe 0 <$$> numberInput initialWounds
+        saveDyn K.Health wnds
         cellNum $ display ((-) <$> hp <*> wnds)
     where cellNum = cellClass "number"
+          readM mtext = fromMaybe 0 (join $ readMaybe . T.unpack <$> mtext)
 
 combatManuverBlock :: ( DomBuilder t m
                       , PostBuild t m
@@ -210,9 +205,9 @@ armorBlock = statBlock "Armor" $ mdo
         row $ lbl "name" >> lbl "ac"
         armorRows armorLines
     addPressed <- el "div" $ button "Add"
-    return . join $ dynSum <$> (fst <$$> armorVals)
-    where dynSum = foldl (\dx dy -> (+) <$> dx <*> dy) (pure 0)
-          removeEvents :: (Reflex t) => Dynamic t (M.Map k (b, Event t a)) -> (Event t a)
+    let vals = joinDynThroughMap $ (fst <$$> armorVals)
+    return $ sum <$> vals
+    where removeEvents :: (Reflex t) => Dynamic t (M.Map k (b, Event t a)) -> (Event t a)
           removeEvents x = switchPromptlyDyn $ leftmost . fmap (snd . snd) . M.toList <$> x
 
 nextKey :: (Num k) => M.Map k a -> k

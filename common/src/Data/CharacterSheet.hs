@@ -13,6 +13,21 @@ import qualified Data.Map as M
 import Data.Map (Map)
 import Data.Text (Text)
 
+data CharacterSheet a =
+    CharacterSheet { abilities :: Abilities a
+                   , classStats :: ClassData a
+                   , armor :: a
+                   , skills :: M.Map Text Skill
+                   }
+                   deriving (Read, Show)
+
+blankCharacterSheet :: CharacterSheet Int
+blankCharacterSheet = CharacterSheet {abilities = pure 10
+                                     ,classStats = blankClass
+                                     ,armor = 0
+                                     ,skills = undefined
+                                     }
+
 data Abilities a = Abilities { str :: a
                              , dex :: a
                              , con :: a
@@ -41,7 +56,7 @@ data Ability = Strength
              | Wisdom
              | Intelligence
              | Charisma
-             deriving (Show)
+             deriving (Read, Show)
 
 -- TODO tests
 -- Establish a connection between (Abilities a) and (Ability -> a)
@@ -72,7 +87,16 @@ data ClassData a = ClassData { level :: a
                              , will :: a
                              , classHealth :: a
                              }
-                             deriving (Functor, Foldable, Traversable, Show)
+                             deriving (Functor, Foldable, Traversable, Read, Show)
+
+blankClass :: ClassData Int
+blankClass = ClassData { level = 0
+                       , bab = 0
+                       , fortitude = 0
+                       , reflex = 0
+                       , will = 0
+                       , classHealth = 0
+                       }
 
 chHealthA :: (Integral a, Applicative f) => Abilities (f a) -> ClassData (f a) -> (f a)
 chHealthA abl cls = do
@@ -99,6 +123,7 @@ data Skill = Skill { skillName :: Text
                    , skillRanks :: Int
                    , skillMod :: Int
                    }
+                   deriving (Read, Show)
 
 classSkillBonus :: Skill -> Int
 classSkillBonus sk | skillRanks sk > 0 && isClassSkill sk = 4
