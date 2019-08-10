@@ -9,6 +9,7 @@ library
                , adjunctions
                , common
                , containers
+               , jsaddle
                , lens
                , lens
                , mtl
