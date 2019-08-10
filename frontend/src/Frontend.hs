@@ -15,7 +15,6 @@ import Data.Maybe (fromMaybe)
 import Text.Read (readMaybe)
 
 import Reflex.Dom
-import Reflex.Util
 
 import Common.Route
 import Common.Compose
@@ -194,21 +193,25 @@ combatManuverBlock abl cls = statBlock "Combat Mnvr" . grid $ do
 armorBlock :: ( DomBuilder t m
               , MonadHold t m
               , MonadFix m
-              , PostBuild t m
+              , PerformEvent t m
+              , MonadJSM m
+              , MonadJSM (Performable m)
               )
               => m (Dynamic t Int)
 armorBlock = statBlock "Armor" $ mdo
-    let addLines = attachWith (\m _ -> nextKey m) (current armorLines) addPressed
-        removeLines = removeEvents armorVals
-    armorLines <- addRemoveSet (0 =: ()) addLines removeLines
-    armorVals <- grid $ do
+    initialArmor <- fmap readM . liftJSM $ getLocal K.Armor
+    let addLines = attachWith (\m _ -> nextKey m =: Just 0) (current armorResults) addPressed
+        removeLines = (\k -> k =: Nothing) <$> removeEvents armorResults
+    armorResults <- grid $ do
         row $ lbl "name" >> lbl "ac"
-        armorRows armorLines
+        armorRows initialArmor (addLines <> removeLines)
     addPressed <- el "div" $ button "Add"
-    let vals = joinDynThroughMap $ (fst <$$> armorVals)
-    return $ sum <$> vals
+    let armorVals = joinDynThroughMap (fst <$$> armorResults)
+    saveDyn K.Armor armorVals
+    return $ sum <$> armorVals
     where removeEvents :: (Reflex t) => Dynamic t (M.Map k (b, Event t a)) -> (Event t a)
           removeEvents x = switchPromptlyDyn $ leftmost . fmap (snd . snd) . M.toList <$> x
+          readM mtext = fromMaybe (0 =: 0) (join $ readMaybe . T.unpack <$> mtext)
 
 nextKey :: (Num k) => M.Map k a -> k
 nextKey = (1+) . fromMaybe 0 . maxKey
@@ -221,24 +224,25 @@ lookupMax m | M.null m = Nothing
             | otherwise = Just (M.findMax m)
 
 armorRows :: ( DomBuilder t m
-            , PostBuild t m
-            , MonadHold t m
-            , MonadFix m
-            )
-            => Dynamic t (M.Map Int ()) -> m (Dynamic t (M.Map Int (Dynamic t Int, Event t Int)))
-armorRows ls = listWithKey ls keyedArmorRow
+             , MonadHold t m
+             , MonadFix m
+             )
+             => (M.Map Int Int)
+             -> Event t (M.Map Int (Maybe Int))
+             -> m (Dynamic t (M.Map Int (Dynamic t Int, Event t Int)))
+armorRows initValues updates = listWithKeyShallowDiff initValues updates keyedArmorRow
 
 keyedArmorRow :: (DomBuilder t m)
-              => Int -> a -> m (Dynamic t Int, Event t Int)
-keyedArmorRow key  _ = do
-          (v, ev) <- armorRow
+              => Int -> Int -> Event t Int -> m (Dynamic t Int, Event t Int)
+keyedArmorRow key initialValue _ = do
+          (v, ev) <- armorRow initialValue
           return (v, key <$ ev)
 
 armorRow :: (DomBuilder t m)
-            => m (Dynamic t Int, Event t ())
-armorRow = row $ do
+            => Int -> m (Dynamic t Int, Event t ())
+armorRow initialVal = row $ do
     _ <- cell $ inputElement def
-    armorVal <- cell $ fromMaybe 0 <$$> numberInput 0
+    armorVal <- cell $ fromMaybe 0 <$$> numberInput initialVal
     delEvent <- button "delete line"
     return (armorVal, delEvent)
 
