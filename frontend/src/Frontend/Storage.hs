@@ -40,5 +40,9 @@ getLocal key = do
   jsv <- jsg ("window" :: Text)
     ^. js ("localStorage" :: Text)
     ^. js (T.pack . show $ key)
-  liftJSM (fromJSVal jsv)
+  jsvUndefined <- ghcjsPure (isUndefined jsv)
+  jsvNull <- ghcjsPure (isNull jsv)
+  if jsvUndefined || jsvNull
+     then pure Nothing
+     else liftJSM (fromJSVal jsv)
 
