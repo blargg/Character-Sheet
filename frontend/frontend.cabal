@@ -6,6 +6,7 @@ build-type: Simple
 library
   hs-source-dirs: src
   build-depends: base
+               , aeson
                , adjunctions
                , common
                , containers
@@ -33,6 +34,7 @@ executable frontend
   main-is: main.hs
   hs-source-dirs: src-bin
   build-depends: base
+               , aeson
                , adjunctions
                , common
                , containers

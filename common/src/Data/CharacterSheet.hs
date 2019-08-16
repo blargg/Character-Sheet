@@ -4,6 +4,8 @@
 {-# language OverloadedStrings #-}
 {-# language TypeFamilies #-}
 {-# language ApplicativeDo #-}
+{-# language DeriveGeneric  #-}
+{-# language DeriveAnyClass  #-}
 module Data.CharacterSheet
     ( Abilities(..)
     , Ability(..)
@@ -19,14 +21,16 @@ module Data.CharacterSheet
     , pathfinderSkills
     , shortName
     , skillBonus
-    )where
+    ) where
 
+import Data.Aeson
 import Data.Distributive
 import Data.Functor.Identity
 import Data.Functor.Rep
 import qualified Data.Map as M
 import Data.Map (Map)
 import Data.Text (Text)
+import GHC.Generics
 
 data CharacterSheet a =
     CharacterSheet { abilities :: Abilities a
@@ -34,7 +38,7 @@ data CharacterSheet a =
                    , armor :: Armor a
                    , skills :: M.Map Text Skill
                    }
-                   deriving (Read, Show)
+                   deriving (Generic, ToJSON, FromJSON, Read, Show)
 
 data Abilities a = Abilities { str :: a
                              , dex :: a
@@ -43,7 +47,7 @@ data Abilities a = Abilities { str :: a
                              , int :: a
                              , cha :: a
                              }
-                             deriving (Functor, Foldable, Traversable, Show, Read)
+                             deriving (Generic, ToJSON, FromJSON, Functor, Foldable, Traversable, Show, Read)
 
 instance Applicative Abilities where
     pure x = Abilities x x x x x x
@@ -64,7 +68,7 @@ data Ability = Strength
              | Wisdom
              | Intelligence
              | Charisma
-             deriving (Read, Show)
+             deriving (Generic, ToJSON, FromJSON, Read, Show)
 
 -- TODO tests
 -- Establish a connection between (Abilities a) and (Ability -> a)
@@ -91,7 +95,7 @@ abilityMod score = (score - 10) `div` 2
 data Armor a = Armor { armorName :: Text
                      , armorClass :: a
                      }
-                     deriving (Read, Show)
+                     deriving (Generic, ToJSON, FromJSON, Read, Show)
 
 blankArmor :: Armor Int
 blankArmor = Armor { armorName = ""
@@ -106,7 +110,7 @@ data ClassData a = ClassData { className :: Text
                              , will :: a
                              , classHealth :: a
                              }
-                             deriving (Functor, Foldable, Traversable, Read, Show)
+                             deriving (Generic, ToJSON, FromJSON, Functor, Foldable, Traversable, Read, Show)
 
 blankClass :: ClassData Int
 blankClass = ClassData { className = ""
@@ -143,7 +147,7 @@ data Skill = Skill { skillName :: Text
                    , skillRanks :: Int
                    , skillMod :: Int
                    }
-                   deriving (Read, Show)
+                   deriving (Generic, ToJSON, FromJSON, Read, Show)
 
 blankSkill :: Skill
 blankSkill = Skill { skillName = ""

@@ -6,13 +6,11 @@
 {-# LANGUAGE TypeApplications #-}
 module Frontend (frontend) where
 
-import Control.Monad (join)
 import Control.Monad.Fix
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
-import Text.Read (readMaybe)
 
 import Reflex.Dom
 
@@ -107,7 +105,7 @@ abilityBlock :: ( DomBuilder t m
                 )
                 => m (Abilities (Dynamic t Int))
 abilityBlock = statBlock "Abilities" . grid $ do
-    initVals <- fmap readM . liftJSM $ getLocal K.Abilities
+    initVals <- fromMaybe (pure 10) <$> loadJson K.Abilities
     row $ lbl "Ability" >> lbl "Score" >> lbl "Mod"
     abl <- Abilities <$> abilityDisplay (str initVals) "Str"
               <*> abilityDisplay (dex initVals) "Dex"
@@ -117,9 +115,6 @@ abilityBlock = statBlock "Abilities" . grid $ do
               <*> abilityDisplay (cha initVals) "Cha"
     saveDyn K.Abilities (sequenceA abl)
     return abl
-        where
-            readM :: Maybe Text -> Abilities Int
-            readM mtext = fromMaybe (pure 10) (join $ readMaybe . T.unpack <$> mtext)
 
 abilityDisplay :: ( DomBuilder t m
                   , PostBuild t m
@@ -137,8 +132,7 @@ classBlock :: (DomBuilder t m
               )
            => m (Dynamic t (ClassData Int))
 classBlock = statBlock "Class" . grid $ do
-    mCls <- liftJSM $ getLocal K.Class
-    let cls = readM mCls
+    cls <- fromMaybe blankClass <$> loadJson K.Class
     row $ lbl "Class Name" >> lbl "Level" >> lbl "HP" >> lbl "BAB" >> lbl "Fort" >> lbl "Ref" >> lbl "Will"
     dynCls <- row $ do
         x <- cell . inputElement $ def &
@@ -154,7 +148,6 @@ classBlock = statBlock "Class" . grid $ do
     saveDyn K.Class dynCls
     return dynCls
     where numDefZero initVal = fromMaybe 0 <$$> numberInput initVal
-          readM mtext = fromMaybe blankClass (join $ readMaybe . T.unpack <$> mtext)
 
 -- displays current total health, temp hp, wounds, remaining health
 healthBlock :: ( DomBuilder t m
@@ -168,12 +161,11 @@ healthBlock abl cls = statBlock "Health" . grid $ do
     row $ lbl "Max HP" >> lbl "Wounds" >> lbl "HP"
     row $ do
         cellNum (display hp)
-        initialWounds <- fmap readM . liftJSM $ getLocal K.Health
+        initialWounds <- fromMaybe 0 <$> loadJson K.Health
         wnds <- cell $ fromMaybe 0 <$$> numberInput initialWounds
         saveDyn K.Health wnds
         cellNum $ display ((-) <$> hp <*> wnds)
     where cellNum = cellClass "number"
-          readM mtext = fromMaybe 0 (join $ readMaybe . T.unpack <$> mtext)
 
 combatManuverBlock :: ( DomBuilder t m
                       , PostBuild t m
@@ -201,7 +193,7 @@ armorBlock :: ( DomBuilder t m
               )
               => m (Dynamic t [Armor Int])
 armorBlock = statBlock "Armor" $ mdo
-    initArmorList <- fmap readM . liftJSM $ getLocal K.Armor
+    initArmorList <- fromMaybe [blankArmor] <$> loadJson K.Armor
     let initArmorMap = M.fromList $ enumerate initArmorList
     let addLines = attachWith (\m _ -> nextKey m =: Just blankArmor) (current armorResults) addPressed
         removeLines = (\k -> k =: Nothing) <$> removeEvents armorResults
@@ -215,8 +207,6 @@ armorBlock = statBlock "Armor" $ mdo
     return armorList
     where removeEvents :: (Reflex t) => Dynamic t (M.Map k (b, Event t a)) -> (Event t a)
           removeEvents x = switchPromptlyDyn $ leftmost . fmap (snd . snd) . M.toList <$> x
-          readM :: Maybe Text -> [Armor Int]
-          readM mtext = fromMaybe [blankArmor] (join $ readMaybe . T.unpack <$> mtext)
           enumerate = zip [0..]
 
 nextKey :: (Num k) => M.Map k a -> k
@@ -262,13 +252,13 @@ skillsBlock :: ( DomBuilder t m
                )
                => Abilities (Dynamic t Int) -> M.Map Text Ability -> m (M.Map Text (Dynamic t Skill))
 skillsBlock abl statsConfig = statBlock "Skills" . grid $ do
-    initialSkillMap <- fmap readM . liftJSM $ getLocal K.Skill
+    initialSkillMap <- fromMaybe blankSkillsBlock <$> loadJson K.Skill
     row $ lbl "Skill" >> lbl "Ability" >> lbl "Class Skill" >> lbl "Ranks" >> lbl "misc. mod"
         >> lbl "total"
     dSkillMap <- M.traverseWithKey (skillLine abl initialSkillMap) statsConfig
     saveDyn K.Skill (sequenceA dSkillMap)
     return dSkillMap
-        where readM mText = fromMaybe (blankSkill <$ statsConfig) (join $ readMaybe . T.unpack <$> mText)
+        where blankSkillsBlock = blankSkill <$ statsConfig
 
 skillLine :: ( DomBuilder t m
              , PostBuild t m
