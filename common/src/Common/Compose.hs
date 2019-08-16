@@ -1,4 +1,7 @@
-module Common.Compose where
+module Common.Compose
+    ( (<$$>)
+    , (<**>)
+    )where
 
 import Data.Functor.Compose
 

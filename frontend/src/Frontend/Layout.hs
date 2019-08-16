@@ -1,5 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Frontend.Layout where
+module Frontend.Layout
+    ( cell
+    , cellClass
+    , grid
+    , labelCell
+    , row
+    , statBlock
+    )where
 
 import Reflex.Dom.Core
 

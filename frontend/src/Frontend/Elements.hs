@@ -2,10 +2,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Frontend.Elements
-    ( urlLink
-    , div
+    ( div
     , divC
     , span
+    , urlLink
     )
         where
 

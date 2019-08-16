@@ -4,7 +4,22 @@
 {-# language OverloadedStrings #-}
 {-# language TypeFamilies #-}
 {-# language ApplicativeDo #-}
-module Data.CharacterSheet where
+module Data.CharacterSheet
+    ( Abilities(..)
+    , Ability(..)
+    , Armor(..)
+    , CharacterSheet(..)
+    , ClassData(..)
+    , Skill(..)
+    , abilityMod
+    , blankArmor
+    , blankClass
+    , blankSkill
+    , chHealth
+    , pathfinderSkills
+    , shortName
+    , skillBonus
+    )where
 
 import Data.Distributive
 import Data.Functor.Identity

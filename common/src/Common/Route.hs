@@ -11,7 +11,13 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Common.Route where
+module Common.Route
+    ( BackendRoute(..)
+    , FrontendRoute(..)
+    , backendRouteEncoder
+    , pageName
+    , samePage
+    )where
 
 {- -- You will probably want these imports for composing Encoders.
 import Prelude hiding (id, (.))

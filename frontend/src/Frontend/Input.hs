@@ -2,7 +2,9 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
-module Frontend.Input where
+module Frontend.Input
+    ( numberInput
+    ) where
 
 import Data.Text (Text)
 import qualified Data.Text as T

@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Frontend.About where
+module Frontend.About (main) where
 
 import Reflex.Dom
 import qualified Frontend.Elements as EL

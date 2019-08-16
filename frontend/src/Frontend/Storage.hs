@@ -1,10 +1,10 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Frontend.Storage
-    ( saveLocal
+    ( StorageKey(..)
     , getLocal
     , saveDyn
-    , StorageKey(..)
+    , saveLocal
     ) where
 
 import Control.Lens ((^.))
