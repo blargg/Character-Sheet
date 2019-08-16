@@ -16,17 +16,10 @@ import Data.Text (Text)
 data CharacterSheet a =
     CharacterSheet { abilities :: Abilities a
                    , classStats :: ClassData a
-                   , armor :: a
+                   , armor :: Armor a
                    , skills :: M.Map Text Skill
                    }
                    deriving (Read, Show)
-
-blankCharacterSheet :: CharacterSheet Int
-blankCharacterSheet = CharacterSheet {abilities = pure 10
-                                     ,classStats = blankClass
-                                     ,armor = 0
-                                     ,skills = undefined
-                                     }
 
 data Abilities a = Abilities { str :: a
                              , dex :: a
@@ -79,6 +72,16 @@ instance Representable Abilities where
 
 abilityMod :: (Integral a) => a -> a
 abilityMod score = (score - 10) `div` 2
+
+data Armor a = Armor { armorName :: Text
+                     , armorClass :: a
+                     }
+                     deriving (Read, Show)
+
+blankArmor :: Armor Int
+blankArmor = Armor { armorName = ""
+                   , armorClass = 0
+                   }
 
 data ClassData a = ClassData { className :: Text
                              , level :: a
