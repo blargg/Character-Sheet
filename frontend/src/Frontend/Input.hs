@@ -21,11 +21,11 @@ numberInput :: ( Read a
                => a -> m (Dynamic t (Maybe a))
 numberInput initialVal = parseInput parse numberConfig
     where
-        numberConfig = def & inputElementConfig_elementConfig
-                             . elementConfig_initialAttributes
-                             .~ (classAttr "numberInput number")
+        numberConfig = def & elConf .~ (  classAttr "numberInput number"
+                                       <> "type" =: "number")
                            & inputElementConfig_initialValue
                              .~ (T.pack . show $ initialVal)
+        elConf = inputElementConfig_elementConfig . elementConfig_initialAttributes
         parse :: (Read a) => Text -> Maybe a
         parse = readMaybe . T.unpack
 
