@@ -79,6 +79,7 @@ sheet_body :: ( DomBuilder t m
               , PostBuild t m
               , MonadHold t m
               , MonadFix m
+              , TriggerEvent t m
               , MonadJSM m
               , PerformEvent t m
               , MonadJSM (Performable m)
@@ -98,6 +99,9 @@ sheet_body = do
     where flex = elClass "div" "flexContainer"
 
 abilityBlock :: ( DomBuilder t m
+                , MonadFix m
+                , MonadHold t m
+                , TriggerEvent t m
                 , PostBuild t m
                 , MonadJSM m
                 , PerformEvent t m
@@ -125,10 +129,13 @@ abilityDisplay initialValue name = row $ do
     cellClass "number" $ display (abilityMod <$> abilityScore)
     return abilityScore
 
-classBlock :: (DomBuilder t m
-              ,MonadJSM m
-              ,PerformEvent t m
-              ,MonadJSM (Performable m)
+classBlock :: ( DomBuilder t m
+              , MonadFix m
+              , MonadHold t m
+              , TriggerEvent t m
+              , MonadJSM m
+              , PerformEvent t m
+              , MonadJSM (Performable m)
               )
            => m (Dynamic t (ClassData Int))
 classBlock = statBlock "Class" . grid $ do
@@ -151,6 +158,9 @@ classBlock = statBlock "Class" . grid $ do
 
 -- displays current total health, temp hp, wounds, remaining health
 healthBlock :: ( DomBuilder t m
+               , MonadFix m
+               , MonadHold t m
+               , TriggerEvent t m
                , PostBuild t m
                , PerformEvent t m
                , MonadJSM m
@@ -187,6 +197,7 @@ combatManuverBlock abl cls = statBlock "Combat Mnvr" . grid $ do
 armorBlock :: ( DomBuilder t m
               , MonadHold t m
               , MonadFix m
+              , TriggerEvent t m
               , PerformEvent t m
               , MonadJSM m
               , MonadJSM (Performable m)
@@ -245,7 +256,10 @@ armorRow initialVal = row $ do
     return (armorVal, delEvent)
 
 skillsBlock :: ( DomBuilder t m
-               , PostBuild t m
+               , MonadFix m
+               , MonadHold t m
+               , TriggerEvent t m
+               ,  PostBuild t m
                , PerformEvent t m
                , MonadJSM (Performable m)
                , MonadJSM m

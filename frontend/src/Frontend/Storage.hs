@@ -9,6 +9,7 @@ module Frontend.Storage
 
 import Control.Lens ((^.))
 import Control.Monad (join)
+import Control.Monad.Fix (MonadFix)
 import Data.Aeson
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -18,6 +19,7 @@ import qualified Data.Text.Lazy.Encoding as TL
 
 import Language.Javascript.JSaddle
 import Reflex.Dom hiding (decodeText)
+import Reflex.Time (debounce)
 
 -- Defines all the storage locations for session storage
 data StorageKey = Abilities
@@ -32,11 +34,18 @@ loadJson key = do
     mtext <- liftJSM $ getLocal key
     return . join $ decodeText <$> mtext
 
--- TODO debounce
 -- Save a dynamic value whenever it changes to local storage
-saveDyn :: (ToJSON a, PerformEvent t m, MonadJSM (Performable m)) => StorageKey -> Dynamic t a -> m ()
-saveDyn key dynVal = performEvent_ (liftJSM . saveLocal key <$> serializedValues)
-    where serializedValues = encodeText <$> updated dynVal
+saveDyn :: ( ToJSON a
+           , MonadFix m
+           , MonadHold t m
+           , TriggerEvent t m
+           , PerformEvent t m
+           , MonadJSM (Performable m)
+           ) => StorageKey -> Dynamic t a -> m ()
+saveDyn key dynVal = do
+    debouncedValues <- debounce 2 $ updated dynVal
+    let serializedValues = encodeText <$> debouncedValues
+    performEvent_ (liftJSM . saveLocal key <$> serializedValues)
 
 encodeText :: ToJSON a => a -> Text
 encodeText = TL.toStrict . TL.decodeUtf8 . encode
