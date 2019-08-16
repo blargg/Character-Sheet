@@ -43,14 +43,12 @@ body :: ( DomBuilder t m
         , MonadFix m
         , SetRoute t (R FrontendRoute) m
         , RouteToUrl (R FrontendRoute) m
-        , Prerender js m
-        , PostBuild t m
-        , PerformEvent t m
+        , Prerender js t m
         )
      => RoutedT t (R FrontendRoute) m ()
 body = subRoute_ $ \x -> do
     navigation x $ case x of
-        FrontendRoute_Main -> prerender (text "loading") sheet_body
+        FrontendRoute_Main -> prerender_ (text "loading") sheet_body
         FrontendRoute_About -> About.main
 
 navigation :: ( DomBuilder t m
