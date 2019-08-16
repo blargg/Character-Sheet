@@ -135,21 +135,23 @@ classBlock :: (DomBuilder t m
               ,PerformEvent t m
               ,MonadJSM (Performable m)
               )
-           => m (ClassData (Dynamic t Int))
+           => m (Dynamic t (ClassData Int))
 classBlock = statBlock "Class" . grid $ do
     mCls <- liftJSM $ getLocal K.Class
     let cls = readM mCls
     row $ lbl "Class Name" >> lbl "Level" >> lbl "HP" >> lbl "BAB" >> lbl "Fort" >> lbl "Ref" >> lbl "Will"
     dynCls <- row $ do
-        _ <- cell $ inputElement def -- class name
+        x <- cell . inputElement $ def &
+            inputElementConfig_initialValue .~ (className cls)
+        let clsName = value x
         levels <- cell $ numDefZero (level cls)
         hp <- cell $ numDefZero (classHealth cls)
         baseAttackBonus <- cell $ numDefZero (bab cls)
         fortSave <- cell $ numDefZero (fortitude cls)
         refSave <- cell $ numDefZero (reflex cls)
         willSave <- cell $ numDefZero (will cls)
-        return $ ClassData levels baseAttackBonus fortSave refSave willSave hp
-    saveDyn K.Class (sequenceA dynCls)
+        return $ ClassData <$> clsName <*> levels <*> baseAttackBonus <*> fortSave <*> refSave <*> willSave <*> hp
+    saveDyn K.Class dynCls
     return dynCls
     where numDefZero initVal = fromMaybe 0 <$$> numberInput initVal
           readM mtext = fromMaybe blankClass (join $ readMaybe . T.unpack <$> mtext)
@@ -160,9 +162,9 @@ healthBlock :: ( DomBuilder t m
                , PerformEvent t m
                , MonadJSM m
                , MonadJSM (Performable m)
-               ) => Abilities (Dynamic t Int) -> ClassData (Dynamic t Int) -> m ()
+               ) => Abilities (Dynamic t Int) -> Dynamic t (ClassData Int) -> m ()
 healthBlock abl cls = statBlock "Health" . grid $ do
-    let hp = chHealthA abl cls
+    let hp = chHealth <$> (sequenceA abl) <*> cls
     row $ lbl "Max HP" >> lbl "Wounds" >> lbl "HP"
     row $ do
         cellNum (display hp)
@@ -176,14 +178,14 @@ healthBlock abl cls = statBlock "Health" . grid $ do
 combatManuverBlock :: ( DomBuilder t m
                       , PostBuild t m
                       )
-                      => Abilities (Dynamic t Int) -> ClassData (Dynamic t Int) -> m ()
+                      => Abilities (Dynamic t Int) -> Dynamic t (ClassData Int) -> m ()
 combatManuverBlock abl cls = statBlock "Combat Mnvr" . grid $ do
     row $ ct "CMB" >> cellNum (display cmb)
     row $ ct "CMD" >> cellNum (display cmd)
     where combatStats = do
               strengthMod <- str absMod
               dexterity <- dex absMod
-              baseAttack <- bab cls
+              baseAttack <- bab <$> cls
               return $ (strengthMod + baseAttack, strengthMod + dexterity + baseAttack + 10)
           cmb = fst <$> combatStats
           cmd = snd <$> combatStats

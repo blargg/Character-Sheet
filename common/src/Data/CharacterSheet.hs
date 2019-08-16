@@ -80,7 +80,8 @@ instance Representable Abilities where
 abilityMod :: (Integral a) => a -> a
 abilityMod score = (score - 10) `div` 2
 
-data ClassData a = ClassData { level :: a
+data ClassData a = ClassData { className :: Text
+                             , level :: a
                              , bab :: a
                              , fortitude :: a
                              , reflex :: a
@@ -90,7 +91,8 @@ data ClassData a = ClassData { level :: a
                              deriving (Functor, Foldable, Traversable, Read, Show)
 
 blankClass :: ClassData Int
-blankClass = ClassData { level = 0
+blankClass = ClassData { className = ""
+                       , level = 0
                        , bab = 0
                        , fortitude = 0
                        , reflex = 0
