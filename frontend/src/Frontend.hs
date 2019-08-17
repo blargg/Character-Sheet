@@ -28,8 +28,6 @@ import Obelisk.Route.Frontend
 import Obelisk.Generated.Static
 import Obelisk.Frontend
 
-import Language.Javascript.JSaddle
-
 frontend :: Frontend (R FrontendRoute)
 frontend = Frontend
   { _frontend_head = header
@@ -42,11 +40,12 @@ body :: ( DomBuilder t m
         , SetRoute t (R FrontendRoute) m
         , RouteToUrl (R FrontendRoute) m
         , Prerender js t m
+        , PostBuild t m
         )
      => RoutedT t (R FrontendRoute) m ()
 body = subRoute_ $ \x -> do
     navigation x $ case x of
-        FrontendRoute_Main -> prerender_ (text "loading") sheet_body
+        FrontendRoute_Main -> sheet_body
         FrontendRoute_About -> About.main
 
 navigation :: ( DomBuilder t m
@@ -76,13 +75,10 @@ header = do
     elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", "https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono")]) $ return ()
 
 sheet_body :: ( DomBuilder t m
-              , PostBuild t m
               , MonadHold t m
               , MonadFix m
-              , TriggerEvent t m
-              , MonadJSM m
-              , PerformEvent t m
-              , MonadJSM (Performable m)
+              , Prerender js t m
+              , PostBuild t m
               )
               => m ()
 sheet_body = do
@@ -99,17 +95,20 @@ sheet_body = do
     where flex = elClass "div" "flexContainer"
 
 abilityBlock :: ( DomBuilder t m
-                , MonadFix m
                 , MonadHold t m
-                , TriggerEvent t m
+                , MonadFix m
                 , PostBuild t m
-                , MonadJSM m
-                , PerformEvent t m
-                , MonadJSM (Performable m)
+                , Prerender js t m
                 )
-                => m (Abilities (Dynamic t Int))
-abilityBlock = statBlock "Abilities" . grid $ do
-    initVals <- fromMaybe (pure 10) <$> loadJson K.Abilities
+                => m (Dynamic t (Abilities Int))
+abilityBlock = stashValue K.Abilities abilityBlock'
+
+abilityBlock' :: ( DomBuilder t m
+                 , PostBuild t m
+                 )
+                 => Maybe (Abilities Int) -> m (Dynamic t (Abilities Int))
+abilityBlock' minit = statBlock "Abilities" . grid $ do
+    let initVals = fromMaybe (pure 10) minit
     row $ lbl "Ability" >> lbl "Score" >> lbl "Mod"
     abl <- Abilities <$> abilityDisplay (str initVals) "Str"
               <*> abilityDisplay (dex initVals) "Dex"
@@ -117,8 +116,7 @@ abilityBlock = statBlock "Abilities" . grid $ do
               <*> abilityDisplay (wis initVals) "Wis"
               <*> abilityDisplay (int initVals) "Int"
               <*> abilityDisplay (cha initVals) "Cha"
-    saveDyn K.Abilities (sequenceA abl)
-    return abl
+    return (sequenceA abl)
 
 abilityDisplay :: ( DomBuilder t m
                   , PostBuild t m
@@ -132,14 +130,16 @@ abilityDisplay initialValue name = row $ do
 classBlock :: ( DomBuilder t m
               , MonadFix m
               , MonadHold t m
-              , TriggerEvent t m
-              , MonadJSM m
-              , PerformEvent t m
-              , MonadJSM (Performable m)
+              , PostBuild t m
+              , Prerender js t m
               )
            => m (Dynamic t (ClassData Int))
-classBlock = statBlock "Class" . grid $ do
-    cls <- fromMaybe blankClass <$> loadJson K.Class
+classBlock = stashValue K.Class classBlock'
+
+classBlock' :: ( DomBuilder t m)
+            => Maybe (ClassData Int) -> m (Dynamic t (ClassData Int))
+classBlock' minit = statBlock "Class" . grid $ do
+    let cls = fromMaybe blankClass minit
     row $ lbl "Class Name" >> lbl "Level" >> lbl "HP" >> lbl "BAB" >> lbl "Fort" >> lbl "Ref" >> lbl "Will"
     dynCls <- row $ do
         x <- cell . inputElement $ def &
@@ -152,7 +152,6 @@ classBlock = statBlock "Class" . grid $ do
         refSave <- cell $ numDefZero (reflex cls)
         willSave <- cell $ numDefZero (will cls)
         return $ ClassData <$> clsName <*> levels <*> baseAttackBonus <*> fortSave <*> refSave <*> willSave <*> hp
-    saveDyn K.Class dynCls
     return dynCls
     where numDefZero initVal = fromMaybe 0 <$$> numberInput initVal
 
@@ -160,33 +159,35 @@ classBlock = statBlock "Class" . grid $ do
 healthBlock :: ( DomBuilder t m
                , MonadFix m
                , MonadHold t m
-               , TriggerEvent t m
                , PostBuild t m
-               , PerformEvent t m
-               , MonadJSM m
-               , MonadJSM (Performable m)
-               ) => Abilities (Dynamic t Int) -> Dynamic t (ClassData Int) -> m ()
-healthBlock abl cls = statBlock "Health" . grid $ do
-    let hp = chHealth <$> (sequenceA abl) <*> cls
+               , Prerender js t m
+               ) => Dynamic t (Abilities Int) -> Dynamic t (ClassData Int) -> m ()
+healthBlock abl cls = () <$ stashValue K.Health (healthBlock' abl cls)
+
+healthBlock' :: ( DomBuilder t m
+                , PostBuild t m
+                ) => Dynamic t (Abilities Int) -> Dynamic t (ClassData Int) -> Maybe Int -> m (Dynamic t Int)
+healthBlock' abl cls minit = statBlock "Health" . grid $ do
+    let hp = chHealth <$> abl <*> cls
     row $ lbl "Max HP" >> lbl "Wounds" >> lbl "HP"
     row $ do
         cellNum (display hp)
-        initialWounds <- fromMaybe 0 <$> loadJson K.Health
+        let initialWounds = fromMaybe 0 minit
         wnds <- cell $ fromMaybe 0 <$$> numberInput initialWounds
-        saveDyn K.Health wnds
         cellNum $ display ((-) <$> hp <*> wnds)
+        return wnds
     where cellNum = cellClass "number"
 
 combatManuverBlock :: ( DomBuilder t m
                       , PostBuild t m
                       )
-                      => Abilities (Dynamic t Int) -> Dynamic t (ClassData Int) -> m ()
+                      => Dynamic t (Abilities Int) -> Dynamic t (ClassData Int) -> m ()
 combatManuverBlock abl cls = statBlock "Combat Mnvr" . grid $ do
     row $ ct "CMB" >> cellNum (display cmb)
     row $ ct "CMD" >> cellNum (display cmd)
     where combatStats = do
-              strengthMod <- str absMod
-              dexterity <- dex absMod
+              strengthMod <- str <$> absMod
+              dexterity <- dex <$> absMod
               baseAttack <- bab <$> cls
               return $ (strengthMod + baseAttack, strengthMod + dexterity + baseAttack + 10)
           cmb = fst <$> combatStats
@@ -197,14 +198,21 @@ combatManuverBlock abl cls = statBlock "Combat Mnvr" . grid $ do
 armorBlock :: ( DomBuilder t m
               , MonadHold t m
               , MonadFix m
-              , TriggerEvent t m
-              , PerformEvent t m
-              , MonadJSM m
-              , MonadJSM (Performable m)
+              , PostBuild t m
+              , Prerender js t m
               )
               => m (Dynamic t [Armor Int])
-armorBlock = statBlock "Armor" $ mdo
-    initArmorList <- fromMaybe [blankArmor] <$> loadJson K.Armor
+armorBlock = stashValue K.Armor armorBlock'
+
+
+armorBlock' :: ( DomBuilder t m
+               , MonadHold t m
+               , MonadFix m
+               )
+               => Maybe [Armor Int] -- initial value (if avail)
+               -> m (Dynamic t [Armor Int])
+armorBlock' minit = statBlock "Armor" $ mdo
+    let initArmorList = fromMaybe [blankArmor] minit
     let initArmorMap = M.fromList $ enumerate initArmorList
     let addLines = attachWith (\m _ -> nextKey m =: Just blankArmor) (current armorResults) addPressed
         removeLines = (\k -> k =: Nothing) <$> removeEvents armorResults
@@ -214,7 +222,6 @@ armorBlock = statBlock "Armor" $ mdo
     addPressed <- el "div" $ button "Add"
     let armorMap = joinDynThroughMap (fst <$$> armorResults)
     let armorList = snd <$$> M.toList <$> armorMap
-    saveDyn K.Armor armorList
     return armorList
     where removeEvents :: (Reflex t) => Dynamic t (M.Map k (b, Event t a)) -> (Event t a)
           removeEvents x = switchPromptlyDyn $ leftmost . fmap (snd . snd) . M.toList <$> x
@@ -258,26 +265,31 @@ armorRow initialVal = row $ do
 skillsBlock :: ( DomBuilder t m
                , MonadFix m
                , MonadHold t m
-               , TriggerEvent t m
-               ,  PostBuild t m
-               , PerformEvent t m
-               , MonadJSM (Performable m)
-               , MonadJSM m
+               , PostBuild t m
+               , Prerender js t m
                )
-               => Abilities (Dynamic t Int) -> M.Map Text Ability -> m (M.Map Text (Dynamic t Skill))
-skillsBlock abl statsConfig = statBlock "Skills" . grid $ do
-    initialSkillMap <- fromMaybe blankSkillsBlock <$> loadJson K.Skill
+               => Dynamic t (Abilities Int) -> M.Map Text Ability -> m (Dynamic t (M.Map Text Skill))
+skillsBlock  abl statsConfg = stashValue K.Skill (skillsBlock' abl statsConfg)
+
+skillsBlock' :: ( DomBuilder t m
+                , PostBuild t m
+                )
+               => Dynamic t (Abilities Int)
+               -> M.Map Text Ability
+               -> Maybe (M.Map Text Skill)
+               -> m (Dynamic t (M.Map Text Skill))
+skillsBlock' abl statsConfig minit = statBlock "Skills" . grid $ do
+    let initialSkillMap = fromMaybe blankSkillsBlock minit
     row $ lbl "Skill" >> lbl "Ability" >> lbl "Class Skill" >> lbl "Ranks" >> lbl "misc. mod"
         >> lbl "total"
-    dSkillMap <- M.traverseWithKey (skillLine abl initialSkillMap) statsConfig
-    saveDyn K.Skill (sequenceA dSkillMap)
+    dSkillMap <- sequenceA <$> M.traverseWithKey (skillLine abl initialSkillMap) statsConfig
     return dSkillMap
         where blankSkillsBlock = blankSkill <$ statsConfig
 
 skillLine :: ( DomBuilder t m
              , PostBuild t m
              )
-             => Abilities (Dynamic t Int) -> M.Map Text Skill -> Text -> Ability -> m (Dynamic t Skill)
+             => Dynamic t (Abilities Int) -> M.Map Text Skill -> Text -> Ability -> m (Dynamic t Skill)
 skillLine abls initSkillMap skillTitle abl = row $ do
     let initSkill = fromMaybe blankSkill (M.lookup skillTitle initSkillMap)
     ct skillTitle
@@ -286,7 +298,7 @@ skillLine abls initSkillMap skillTitle abl = row $ do
     ranks <- cell $ fromMaybe 0 <$$> numberInput (skillRanks initSkill)
     miscMod <- cell $ fromMaybe 0 <$$> numberInput (skillMod initSkill)
     let sk = Skill <$> pure skillTitle <*> value classCB <*> pure abl <*> ranks <*> miscMod
-    cellClass "number" $ display (skillBonus <$> sequenceA abls <*> sk)
+    cellClass "number" $ display (skillBonus <$> abls <*> sk)
     return sk
 
 ct :: (DomBuilder t m) => Text -> m ()
