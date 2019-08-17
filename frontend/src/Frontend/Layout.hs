@@ -5,12 +5,14 @@ module Frontend.Layout
     , grid
     , labelCell
     , row
+    , space
     , statBlock
     )where
 
 import Reflex.Dom.Core
 
 import Data.Text (Text)
+import qualified Frontend.Elements as E
 
 grid :: (DomBuilder t m) => m a -> m a
 grid = elClass "div" "grid"
@@ -31,3 +33,6 @@ statBlock :: (DomBuilder t m) => Text -> m a -> m a
 statBlock title innerWidget = elClass "div" "statBlock" $ do
     elClass "h3" "blockHeader" $ text title
     innerWidget
+
+space :: (DomBuilder t m) => Text -> m ()
+space width = E.spanAttr ("style" =: ("display:inline-block; width: " <> width)) $ pure ()

@@ -5,12 +5,16 @@ module Frontend.Elements
     ( div
     , divC
     , span
+    , spanAttr
+    , spanC
     , urlLink
     )
         where
 
 import Prelude hiding (div, span)
 import Reflex.Dom
+
+import Data.Map (Map)
 import Data.Text (Text)
 
 -- | This module is meant to be imported qualified, many of the names are short,
@@ -31,3 +35,9 @@ divC = elClass "div"
 
 span :: DomBuilder t m => m a -> m a
 span = el "span"
+
+spanC :: DomBuilder t m => Text -> m a -> m a
+spanC = elClass "span"
+
+spanAttr :: DomBuilder t m => Map Text Text -> m a -> m a
+spanAttr = elAttr "span"

@@ -89,7 +89,7 @@ sheet_body = do
             combatManuverBlock abl' cls
             return abl'
         cls <- classBlock
-    _ <- armorBlock -- armor class
+    _ <- armorBlock abl -- armor class
     _ <- skillsBlock abl pathfinderSkills -- skill map
     return ()
     where flex = elClass "div" "flexContainer"
@@ -201,17 +201,25 @@ armorBlock :: ( DomBuilder t m
               , PostBuild t m
               , Prerender js t m
               )
-              => m (Dynamic t [Armor Int])
-armorBlock = stashValue K.Armor armorBlock'
+              => Dynamic t (Abilities Int) -> m (Dynamic t [Armor Int])
+armorBlock abl = stashValue K.Armor (armorBlock' abl)
 
 
 armorBlock' :: ( DomBuilder t m
+               , PostBuild t m
                , MonadHold t m
                , MonadFix m
                )
-               => Maybe [Armor Int] -- initial value (if avail)
+               => Dynamic t (Abilities Int)
+               -> Maybe [Armor Int] -- initial value (if avail)
                -> m (Dynamic t [Armor Int])
-armorBlock' minit = statBlock "Armor" $ mdo
+armorBlock' abl minit = statBlock "Armor" $ mdo
+    E.div $ do
+        display dynAc
+        E.spanC "label" (text "AC")
+        space "0.5em"
+        display dynFlatFoot
+        E.spanC "label" (text "Touch")
     let initArmorList = fromMaybe [blankArmor] minit
     let initArmorMap = M.fromList $ enumerate initArmorList
     let addLines = attachWith (\m _ -> nextKey m =: Just blankArmor) (current armorResults) addPressed
@@ -222,6 +230,9 @@ armorBlock' minit = statBlock "Armor" $ mdo
     addPressed <- el "div" $ button "Add"
     let armorMap = joinDynThroughMap (fst <$$> armorResults)
     let armorList = snd <$$> M.toList <$> armorMap
+    let wornArmor = sum . fmap armorClass <$> armorList
+    let dynFlatFoot = (+10) . abilityMod . dex <$> abl
+    let dynAc = (+) <$> wornArmor <*> dynFlatFoot
     return armorList
     where removeEvents :: (Reflex t) => Dynamic t (M.Map k (b, Event t a)) -> (Event t a)
           removeEvents x = switchPromptlyDyn $ leftmost . fmap (snd . snd) . M.toList <$> x
