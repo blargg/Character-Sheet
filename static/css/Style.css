@@ -80,7 +80,9 @@ div.nav-item>a {
     color: #444;
 }
 
-.single-line-edit>div,p,br {
+.single-line-edit>div,
+.single-line-edit>p,
+.single-line-edit>br {
     display: none;
 }
 
