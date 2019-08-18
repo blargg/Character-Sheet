@@ -75,6 +75,16 @@ div.nav-item>a {
     display: table-cell;
 }
 
+.cell input {
+    display: block;
+    margin: 0 auto;
+}
+
+/* Consider making this another class for maintenance */
+.cell.label {
+    text-align: center;
+}
+
 .label {
     font-size: 0.75em;
     color: #444;
@@ -84,6 +94,14 @@ div.nav-item>a {
 .single-line-edit>p,
 .single-line-edit>br {
     display: none;
+}
+
+span.single-line-edit {
+    display: inline-block;
+    min-width: 0.5em;
+    min-height: 1em;
+    border-radius: 0.2em;
+    padding: 0 0.1em;
 }
 
 *[contenteditable=true] {
