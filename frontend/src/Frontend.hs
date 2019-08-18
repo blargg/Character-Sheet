@@ -73,6 +73,7 @@ header :: (DomBuilder t m) => m ()
 header = do
     el "title" $ text "Character Sheet"
     elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", static @"css/Style.css")]) $ return ()
+    elAttr "link" (M.fromList [("rel", "shortcut icon"), ("href", static @"image/page_icon.png")]) $ return ()
     elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", "https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono")]) $ return ()
 
 sheet_body :: ( DomBuilder t m
