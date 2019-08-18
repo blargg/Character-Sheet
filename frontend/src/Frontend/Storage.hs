@@ -5,6 +5,7 @@
 module Frontend.Storage
     ( StorageKey(..)
     , loadJson
+    , prerenderStash
     , saveDyn
     , saveLocal
     , stashValue
@@ -24,11 +25,14 @@ import Language.Javascript.JSaddle
 import Reflex.Dom hiding (decodeText)
 import Reflex.Time (debounce)
 
+import Frontend.Javascript
+
 -- Defines all the storage locations for session storage
 data StorageKey = Abilities
                 | Armor
                 | Class
                 | Health
+                | Name
                 | Skill
                 deriving (Show)
 
@@ -56,15 +60,29 @@ type StashWidget t m = ( DomBuilder t m
                        , MonadHold t m
                        , PostBuild t m
                        )
+prerenderStash :: ( FromJSON a
+                  , ToJSON a
+                  , StashWidget t m
+                  , Prerender js t m
+                  )
+                  => StorageKey
+                  -> (forall m'. StashWidget t m' => Maybe a -> m' (Dynamic t a))
+                  -> m (Dynamic t a)
+prerenderStash key mkWidget = fmap join $ prerender (mkWidget Nothing) (stashValue key mkWidget)
+
 stashValue :: ( FromJSON a
               , ToJSON a
-              , StashWidget t m
-              , Prerender js t m
+              , MonadJSM m
+              , MonadFix m
+              , MonadHold t m
+              , TriggerEvent t m
+              , PerformEvent t m
+              , MonadJSM (Performable m)
               )
            => StorageKey
-           -> (forall m'. StashWidget t m' => Maybe a -> m' (Dynamic t a))
+           -> (Maybe a -> m (Dynamic t a))
            -> m (Dynamic t a)
-stashValue key mkWidget = fmap join $ prerender (mkWidget Nothing) $ do
+stashValue key mkWidget = do
     initVal <- loadJson key
     dynVal <- mkWidget initVal
     saveDyn key dynVal
@@ -88,9 +106,4 @@ getLocal key = do
   jsv <- jsg ("window" :: Text)
     ^. js ("localStorage" :: Text)
     ^. js (T.pack . show $ key)
-  jsvUndefined <- ghcjsPure (isUndefined jsv)
-  jsvNull <- ghcjsPure (isNull jsv)
-  if jsvUndefined || jsvNull
-     then pure Nothing
-     else liftJSM (fromJSVal jsv)
-
+  jsvToText jsv

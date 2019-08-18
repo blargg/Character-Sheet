@@ -6,6 +6,7 @@
 {-# LANGUAGE TypeApplications #-}
 module Frontend (frontend) where
 
+import Control.Monad (join)
 import Control.Monad.Fix
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -82,7 +83,7 @@ sheet_body :: ( DomBuilder t m
               )
               => m ()
 sheet_body = do
-    el "h1" $ text "Character Sheet"
+    _ <- characterName
     rec abl <- flex $ do
             abl' <- abilityBlock
             healthBlock abl' cls
@@ -94,6 +95,12 @@ sheet_body = do
     return ()
     where flex = elClass "div" "flexContainer"
 
+characterName :: (DomBuilder t m, Prerender js t m) => m (Dynamic t Text)
+characterName = fmap join . el "h1" $
+    prerender
+        (text "Loading..." *> pure "")
+        (stashValue K.Name $ \minit -> editSpan "characterName" (fromMaybe "Character Name" minit))
+
 abilityBlock :: ( DomBuilder t m
                 , MonadHold t m
                 , MonadFix m
@@ -101,7 +108,7 @@ abilityBlock :: ( DomBuilder t m
                 , Prerender js t m
                 )
                 => m (Dynamic t (Abilities Int))
-abilityBlock = stashValue K.Abilities abilityBlock'
+abilityBlock = prerenderStash K.Abilities abilityBlock'
 
 abilityBlock' :: ( DomBuilder t m
                  , PostBuild t m
@@ -134,7 +141,7 @@ classBlock :: ( DomBuilder t m
               , Prerender js t m
               )
            => m (Dynamic t (ClassData Int))
-classBlock = stashValue K.Class classBlock'
+classBlock = prerenderStash K.Class classBlock'
 
 classBlock' :: ( DomBuilder t m)
             => Maybe (ClassData Int) -> m (Dynamic t (ClassData Int))
@@ -162,7 +169,7 @@ healthBlock :: ( DomBuilder t m
                , PostBuild t m
                , Prerender js t m
                ) => Dynamic t (Abilities Int) -> Dynamic t (ClassData Int) -> m ()
-healthBlock abl cls = () <$ stashValue K.Health (healthBlock' abl cls)
+healthBlock abl cls = () <$ prerenderStash K.Health (healthBlock' abl cls)
 
 healthBlock' :: ( DomBuilder t m
                 , PostBuild t m
@@ -202,7 +209,7 @@ armorBlock :: ( DomBuilder t m
               , Prerender js t m
               )
               => Dynamic t (Abilities Int) -> m (Dynamic t [Armor Int])
-armorBlock abl = stashValue K.Armor (armorBlock' abl)
+armorBlock abl = prerenderStash K.Armor (armorBlock' abl)
 
 
 armorBlock' :: ( DomBuilder t m
@@ -280,7 +287,7 @@ skillsBlock :: ( DomBuilder t m
                , Prerender js t m
                )
                => Dynamic t (Abilities Int) -> M.Map Text Ability -> m (Dynamic t (M.Map Text Skill))
-skillsBlock  abl statsConfg = stashValue K.Skill (skillsBlock' abl statsConfg)
+skillsBlock  abl statsConfg = prerenderStash K.Skill (skillsBlock' abl statsConfg)
 
 skillsBlock' :: ( DomBuilder t m
                 , PostBuild t m

@@ -80,7 +80,11 @@ div.nav-item>a {
     color: #444;
 }
 
-span[contenteditable=true] {
+.single-line-edit>div,p,br {
+    display: none;
+}
+
+*[contenteditable=true] {
     background: rgba(0,0,0,0.1);
 }
 

@@ -28,6 +28,7 @@ library
     Frontend.About
     Frontend.Elements
     Frontend.Storage
+    Frontend.Javascript
   ghc-options: -Wall
 
 executable frontend

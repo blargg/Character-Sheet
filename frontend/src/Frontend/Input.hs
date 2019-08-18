@@ -2,17 +2,23 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Frontend.Input
-    ( numberInput
+    ( editSpan
+    , numberInput
     ) where
 
+import Control.Lens
 import Data.Text (Text)
 import qualified Data.Text as T
-import Control.Lens
 import Data.Map (Map)
+import Data.Maybe (fromMaybe)
 import Text.Read (readMaybe)
 
+import Language.Javascript.JSaddle
 import Reflex.Dom.Core
+
+import Frontend.Javascript
 
 numberInput :: ( Read a
                , Show a
@@ -41,3 +47,27 @@ parseInput :: (DomBuilder t m)
 parseInput parse config = do
     textValue <- inputElement config
     return $ fmap parse $ value textValue
+
+-- A span that a user can edit in place (using contenteditable = true)
+editSpan :: ( DomBuilder t m
+            , MonadHold t m
+            , PerformEvent t m
+            , MonadJSM (Performable m)
+            ) => Text -> Text -> m (Dynamic t Text)
+editSpan elemId initialText = do
+    (e, ()) <- elAttr' "span" editAttrs $ text initialText
+    let changedEv = domEvent Input e
+    let checkUpdate = fmap (fromMaybe "") . liftJSM $ innerTextById elemId
+    let checkUpdateEv = checkUpdate <$ changedEv
+    updatedValues <- performEvent checkUpdateEv
+    holdDyn initialText updatedValues
+    where editAttrs = "class" =: "single-line-edit"
+                    <> "contenteditable" =: "true"
+                    <> "id" =: elemId
+
+innerTextById :: Text -> JSM (Maybe Text)
+innerTextById elemId = do
+    innerHTML <- jsg ("document" :: Text)
+        ^. js1 ("getElementById" :: Text) elemId
+        ^. js ("innerText" :: Text)
+    jsvToText innerHTML
