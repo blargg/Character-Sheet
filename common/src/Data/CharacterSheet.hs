@@ -285,7 +285,7 @@ skillBonus abl sk = ablMod + skillRanks sk + skillMod sk + classSkillBonus sk
 
 -- Spell components, represent materials and actions required to cast a spell
 data SpellComp = Verbal | Somantic | Material | Focus | DevineFocus
-    deriving (Eq, Ord)
+    deriving (Eq, Ord, Generic, ToJSON, FromJSON)
 
 instance Fmt SpellComp where
     fmt Verbal = "Verbal"
@@ -300,6 +300,7 @@ fmtComps scs = mconcat $ List.intersperse ", " $ fmap fmt $ Set.toList scs
 data GameDuration = FreeAction
                   | StandardAction
                   | FullRound
+    deriving (Generic, ToJSON, FromJSON)
 
 instance Fmt GameDuration where
     fmt FreeAction = "Free Action"
@@ -307,6 +308,7 @@ instance Fmt GameDuration where
     fmt FullRound = "Full Round"
 
 data SavingThrow = Fort | Ref | Will | None
+    deriving (Generic, ToJSON, FromJSON)
 
 instance Fmt SavingThrow where
     fmt Fort = "Fortitude"
@@ -321,12 +323,14 @@ data School = Abjuration
             | Evocation
             | Illusion
             | Necromancy
+    deriving (Generic, ToJSON, FromJSON)
 
 -- spell level. This is distinct from character level.
 newtype SpellLevel = SpellLevel Int
-    deriving (Eq)
+    deriving (Eq, Generic, ToJSON, FromJSON)
 
 data SpellLevelList = SpellLevelList (Map Class SpellLevel)
+    deriving (Generic, ToJSON, FromJSON)
 
 data Class = Bard
            | Barbarian
@@ -340,11 +344,12 @@ data Class = Bard
            | Sorcerer
            | Wizard
            | Other Text
-           deriving (Eq, Ord, Show)
+           deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON, ToJSONKey, FromJSONKey)
 
 data Target = Personal -- affects only yourself
             | Area
             | Creatures Int
+    deriving (Generic, ToJSON, FromJSON)
 
 instance Fmt Target where
     fmt Personal = "Personal"
@@ -365,6 +370,7 @@ data Spell = Spell
     , spellResist :: Bool
     , target :: Target
     }
+    deriving (Generic, ToJSON, FromJSON)
 
 pathfinderSkills :: Map Text Ability
 pathfinderSkills = M.fromList [ ("Acrobatics", Dexterity)

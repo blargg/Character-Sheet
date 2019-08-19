@@ -16,29 +16,45 @@ import Data.CharacterSheet
 import qualified Data.List as List
 import qualified Data.Map as Map
 import Data.Text (Text)
-import qualified Data.Text as Text
-import qualified Data.Set as Set
 import Reflex.Dom
 
 import qualified Frontend.Elements as E
 import qualified Frontend.Materialize as Mat
 import Frontend.Layout
 import Frontend.Prelude
+import Common.Api
 
-spells_page :: ( DomBuilder t m
+import Language.Javascript.JSaddle
+
+spells_page :: forall t m.
+               ( DomBuilder t m
                , PostBuild t m
+               , MonadJSM (Performable m)
+               , HasJSContext (Performable m)
+               , PerformEvent t m
+               , TriggerEvent t m
+               , MonadHold t m
                )
                => m ()
 spells_page = do
-    search_text <- Mat.textInput "spell_search"
-    let filtered_spells = (do
-        t <- search_text
-        return $ filter (spellFilter t) exampleSpells)
-    spell_list_display filtered_spells
+    search <- searchBox
+    pb <- getPostBuild
+    let initialLoad = spellRequest (searchText "") <$ pb
+    let spellLoadReqEvents = leftmost [fmap spellRequest (updated search), initialLoad ]
+    -- event when we load a new set of spells to show
+    spellLoad <- fmapMaybe decodeXhrResponse <$> performRequestAsync spellLoadReqEvents :: m (Event t [Spell])
+    displayedSpells <- holdDyn [] spellLoad
+    spell_list_display displayedSpells
     return ()
 
-spellFilter :: Text -> Spell -> Bool
-spellFilter search sp = Text.isPrefixOf search (spellName sp)
+searchBox :: (DomBuilder t m) => m (Dynamic t SpellSearch)
+searchBox = do
+    search_text <- Mat.textInput "spell_search"
+    return (searchText <$> search_text)
+
+-- POST a JSON request for a spell list
+spellRequest :: SpellSearch -> XhrRequest Text
+spellRequest s = postJson "api/spelllist" s
 
 spell_list_display :: ( DomBuilder t m
                       , PostBuild t m) => Dynamic t [Spell] -> m ()
@@ -64,41 +80,9 @@ spell_display Spell{..} = do
         E.divC "col s4" $ lbl' "Target" >> space' >> E.span (text . fmt $ target)
         E.divC "col s4" $ lbl' "Cast Time" >> space' >> E.span (text . fmt $ castTime)
 
-
 spell_levels :: (DomBuilder t m) => SpellLevelList -> m ()
 spell_levels (SpellLevelList sl) = do
     lbl' "spell levels" >> space'
     _ <- mapM f (Map.toList sl)
     return ()
         where f (cl, SpellLevel level) = E.span (text (showT cl)) >> E.span (text (showT level))
-
-
--- example list of spells for initial testing
-exampleSpells :: [Spell]
-exampleSpells = [ fireball, ray_of_frost]
-
-fireball :: Spell
-fireball = Spell { spellName = "fireball"
-                 , spellLevel = SpellLevelList $ Wizard =: SpellLevel 3
-                 , description = "shoots fireball at person"
-                 , components = Set.fromList [ Verbal, Somantic, Material ]
-                 , castTime = StandardAction
-                 , duration = "instanteneous"
-                 , range = "400ft + 40ft / level"
-                 , savingThrow = Ref
-                 , spellResist = True
-                 , target = Area
-                 }
-
-ray_of_frost :: Spell
-ray_of_frost = Spell { spellName = "ray of frost"
-                 , spellLevel = SpellLevelList $ Wizard =: SpellLevel 0
-                 , description = "beam of frost, slows"
-                 , components = Set.fromList [ Verbal, Somantic ]
-                 , castTime = StandardAction
-                 , duration = "instanteneous"
-                 , range = "25ft + 5ft / 2 level"
-                 , savingThrow = None
-                 , spellResist = True
-                 , target = Creatures 1
-                 }

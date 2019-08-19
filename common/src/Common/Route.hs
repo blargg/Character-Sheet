@@ -24,6 +24,7 @@ import Prelude hiding (id, (.))
 import Control.Category
 -}
 
+import Control.Category as Cat
 import Data.Text (Text)
 import Data.Functor.Identity
 import Data.Functor.Sum
@@ -34,6 +35,7 @@ import Obelisk.Route.TH
 data BackendRoute :: * -> * where
   -- | Used to handle unparseable routes.
   BackendRoute_Missing :: BackendRoute ()
+  BackendRoute_API :: BackendRoute PageName
   -- You can define any routes that will be handled specially by the backend here.
   -- i.e. These do not serve the frontend, but do something different, such as serving static files.
 
@@ -57,6 +59,7 @@ backendRouteEncoder
 backendRouteEncoder = handleEncoder (const (InL BackendRoute_Missing :/ ())) $
   pathComponentEncoder $ \case
     InL backendRoute -> case backendRoute of
+      BackendRoute_API -> PathSegment "api" $ Cat.id
       BackendRoute_Missing -> PathSegment "missing" $ unitEncoder mempty
     InR obeliskRoute -> obeliskRouteSegment obeliskRoute $ \case
       -- The encoder given to PathEnd determines how to parse query parameters,

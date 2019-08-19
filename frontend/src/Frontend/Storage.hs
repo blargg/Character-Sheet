@@ -18,12 +18,10 @@ import Data.Aeson
 import Data.Text (Text)
 import qualified Data.Text as T
 
-import qualified Data.Text.Lazy as TL
-import qualified Data.Text.Lazy.Encoding as TL
-
 import Language.Javascript.JSaddle
 import Reflex.Dom hiding (decodeText)
 import Reflex.Time (debounce)
+import Common.Prelude
 
 import Frontend.Javascript
 
@@ -89,12 +87,6 @@ stashValue key mkWidget = do
     dynVal <- mkWidget initVal
     saveDyn key dynVal
     return dynVal
-
-encodeText :: ToJSON a => a -> Text
-encodeText = TL.toStrict . TL.decodeUtf8 . encode
-
-decodeText :: FromJSON a => Text -> Maybe a
-decodeText = decode . TL.encodeUtf8 . TL.fromStrict
 
 saveLocal :: StorageKey -> Text -> JSM ()
 saveLocal key msg = do

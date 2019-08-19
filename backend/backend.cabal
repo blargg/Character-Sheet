@@ -8,10 +8,15 @@ library
   if impl(ghcjs)
     buildable: False
   build-depends: base
+               , aeson
                , common
+               , containers
+               , dependent-sum
                , frontend
                , obelisk-backend
                , obelisk-route
+               , snap
+               , text
   exposed-modules:
     Backend
   ghc-options: -Wall

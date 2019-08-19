@@ -12,6 +12,7 @@ library
                , distributive
                , mtl
                , obelisk-route
+               , reflex-dom
                , text
 
   exposed-modules:

@@ -92,7 +92,7 @@ sheet_body :: ( DomBuilder t m
               => m ()
 sheet_body = Mat.tabs "mainTab" $
     (1 :: Int) =: ("Stats", stat_page)
-    <> 2 =: ("Spells", spells_page)
+    <> 2 =: ("Spells", prerender_ (text "loading") spells_page)
 
 stat_page :: ( DomBuilder t m
              , MonadHold t m
