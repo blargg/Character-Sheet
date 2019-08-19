@@ -212,6 +212,13 @@ armorBlock :: ( DomBuilder t m
               => Dynamic t (Abilities Int) -> m (Dynamic t [Armor Int])
 armorBlock abl = prerenderStash K.Armor (armorBlock' abl)
 
+collapseSection :: ( DomBuilder t m
+                   , PostBuild t m
+                   ) => Dynamic t Closed -> m a -> m a
+collapseSection isClosed = elDynAttr "div" dynAttrs
+    where attrs Closed = "style" =: "display: none"
+          attrs Open = mempty
+          dynAttrs = fmap attrs isClosed
 
 armorBlock' :: ( DomBuilder t m
                , PostBuild t m
@@ -221,27 +228,29 @@ armorBlock' :: ( DomBuilder t m
                => Dynamic t (Abilities Int)
                -> Maybe [Armor Int] -- initial value (if avail)
                -> m (Dynamic t [Armor Int])
-armorBlock' abl minit = statBlock "Armor" $ mdo
+armorBlock' abl minit = statBlock' (text "Armor" *> space "0.5em" *> expandCollapseButton Open) $ \open -> mdo
     E.div $ do
-        display dynAc
+        display dynAc'
         E.spanC "label" (text "AC")
         space "0.5em"
-        display dynFlatFoot
+        display dynFlatFoot'
         E.spanC "label" (text "Touch")
-    let initArmorList = fromMaybe [blankArmor] minit
-    let initArmorMap = M.fromList $ enumerate initArmorList
-    let addLines = attachWith (\m _ -> nextKey m =: Just blankArmor) (current armorResults) addPressed
-        removeLines = (\k -> k =: Nothing) <$> removeEvents armorResults
-    armorResults <- grid $ do
-        row $ lbl "name" >> lbl "ac"
-        armorRows initArmorMap (addLines <> removeLines)
-    addPressed <- el "div" $ button "Add"
-    let armorMap = joinDynThroughMap (fst <$$> armorResults)
-    let armorList = snd <$$> M.toList <$> armorMap
-    let wornArmor = sum . fmap armorClass <$> armorList
-    let dynFlatFoot = (+10) . abilityMod . dex <$> abl
-    let dynAc = (+) <$> wornArmor <*> dynFlatFoot
-    return armorList
+    (dynAc', dynFlatFoot', armorList') <- collapseSection open $ mdo
+        let initArmorList = fromMaybe [blankArmor] minit
+        let initArmorMap = M.fromList $ enumerate initArmorList
+        let addLines = attachWith (\m _ -> nextKey m =: Just blankArmor) (current armorResults) addPressed
+            removeLines = (\k -> k =: Nothing) <$> removeEvents armorResults
+        armorResults <- grid $ do
+            row $ lbl "name" >> lbl "ac"
+            armorRows initArmorMap (addLines <> removeLines)
+        addPressed <- el "div" $ button "Add"
+        let armorMap = joinDynThroughMap (fst <$$> armorResults)
+        let armorList = snd <$$> M.toList <$> armorMap
+        let wornArmor = sum . fmap armorClass <$> armorList
+        let dynFlatFoot = (+10) . abilityMod . dex <$> abl
+        let dynAc = (+) <$> wornArmor <*> dynFlatFoot
+        return (dynAc, dynFlatFoot, armorList)
+    return armorList'
     where removeEvents :: (Reflex t) => Dynamic t (M.Map k (b, Event t a)) -> (Event t a)
           removeEvents x = switchPromptlyDyn $ leftmost . fmap (snd . snd) . M.toList <$> x
           enumerate = zip [0..]

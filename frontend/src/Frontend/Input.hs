@@ -1,14 +1,20 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecursiveDo #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE FlexibleContexts #-}
 module Frontend.Input
-    ( editSpan
+    ( Closed(..)
+    , editSpan
     , numberInput
+    , expandCollapseButton
     ) where
 
+import Common.Compose
 import Control.Lens
+import Control.Monad.Fix
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Map (Map)
@@ -17,6 +23,7 @@ import Text.Read (readMaybe)
 
 import Language.Javascript.JSaddle
 import Reflex.Dom.Core
+import Obelisk.Generated.Static
 
 import Frontend.Javascript
 
@@ -71,3 +78,36 @@ innerTextById elemId = do
         ^. js1 ("getElementById" :: Text) elemId
         ^. js ("innerText" :: Text)
     jsvToText innerHTML
+
+data Closed = Closed | Open
+    deriving (Eq)
+
+isOpen :: Bool -> Closed
+isOpen True = Open
+isOpen False = Closed
+
+-- Creates a button that toggles, and changes image when clicked.
+-- The appearance is suited for expand and collapse.
+expandCollapseButton :: forall t m. (DomBuilder t m, MonadFix m, MonadHold t m, PostBuild t m) => Closed -> m (Dynamic t Closed)
+expandCollapseButton initState = mdo
+    let initiallyOpen = initState == Open
+    expState <- isOpen <$$> toggle initiallyOpen clickedEv :: m (Dynamic t Closed)
+    (openSvgEl, _) <- mkSvg Open expState
+    (closeSvgEl, _) <- mkSvg Closed expState
+    let clickedEv :: Event t ()
+        clickedEv = domEvent Click openSvgEl <> domEvent Click closeSvgEl
+    return expState
+    where
+        mkSvg rep cur = elDynAttr'
+            "img"
+            (
+                (displayStyle rep <$> cur)
+                <> pure ("src" =: iconFor rep
+                      <> "height" =: size
+                      <> "width" =: size))
+            (return ())
+        iconFor Open = static @"icon/up_arrow.svg"
+        iconFor Closed = static @"icon/down_arrow.svg"
+        displayStyle rep cur = if rep == cur then mempty
+                                             else "style" =: "display: none;"
+        size = "10px"

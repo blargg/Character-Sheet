@@ -7,6 +7,7 @@ module Frontend.Layout
     , row
     , space
     , statBlock
+    , statBlock'
     )where
 
 import Reflex.Dom.Core
@@ -30,9 +31,12 @@ labelCell :: (DomBuilder t m) => Text -> m ()
 labelCell = cellClass "label" . text
 
 statBlock :: (DomBuilder t m) => Text -> m a -> m a
-statBlock title innerWidget = elClass "div" "statBlock" $ do
-    elClass "h3" "blockHeader" $ text title
-    innerWidget
+statBlock title = statBlock' (text title) . const
+
+statBlock' :: (DomBuilder t m) => m b -> (b -> m a) -> m a
+statBlock' titleWidget innerWidget = elClass "div" "statBlock" $ do
+    headerValue <- elClass "h3" "blockHeader" $ titleWidget
+    innerWidget headerValue
 
 space :: (DomBuilder t m) => Text -> m ()
 space width = E.spanAttr ("style" =: ("display:inline-block; width: " <> width)) $ pure ()

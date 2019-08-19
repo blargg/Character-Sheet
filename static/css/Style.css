@@ -90,6 +90,11 @@ div.nav-item>a {
     color: #444;
 }
 
+.collapse{
+    transition: max-height 0.2s ease-out;
+    overflow: hidden;
+}
+
 .single-line-edit>div,
 .single-line-edit>p,
 .single-line-edit>br {
