@@ -22,11 +22,18 @@ input {
     background: rgba(200, 150, 150, 1.0);
     border: none;
     border-radius: 1em;
+    visibility: hidden;
 }
 
 .delete-button:hover {
     background: rgba(175, 125, 125, 1.0);
 }
+
+/* Show when hovering any part of the row */
+.row:hover .delete-button {
+    visibility: visible;
+}
+
 
 /* Navigation */
 .topnav {
@@ -73,8 +80,6 @@ div.nav-item>a {
 
 .grid {
     display: table;
-    border-collapse: separate;
-    border-spacing: 1em 2px;
 }
 
 .row {
@@ -83,6 +88,7 @@ div.nav-item>a {
 
 .cell {
     display: table-cell;
+    padding: 0 0.5em 0 0;
 }
 
 .cell input {
