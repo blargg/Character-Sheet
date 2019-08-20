@@ -286,7 +286,7 @@ armorRow initialVal = row $ do
     armorNm <- fmap value . cell $ inputElement $ def
         & inputElementConfig_initialValue .~ (armorName initialVal)
     armorCls <- cell $ fromMaybe 0 <$$> numberInput (armorClass initialVal)
-    delEvent <- button "delete line"
+    delEvent <- buttonC "delete-button" "delete"
     let armorVal = Armor <$> armorNm <*> armorCls
     return (armorVal, delEvent)
 

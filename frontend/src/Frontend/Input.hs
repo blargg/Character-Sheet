@@ -7,6 +7,7 @@
 {-# LANGUAGE TypeApplications #-}
 module Frontend.Input
     ( Closed(..)
+    , buttonC
     , editSpan
     , numberInput
     , expandCollapseButton
@@ -111,3 +112,8 @@ expandCollapseButton initState = mdo
         displayStyle rep cur = if rep == cur then mempty
                                              else "style" =: "display: none;"
         size = "10px"
+
+buttonC :: DomBuilder t m => Text -> Text -> m (Event t ())
+buttonC className buttonText = do
+    (e, ()) <- elClass' "button" className $ text buttonText
+    return $ domEvent Click e

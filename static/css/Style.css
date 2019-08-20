@@ -18,6 +18,16 @@ input {
     background-color: rgba(256, 256, 256, 0.85);
 }
 
+.delete-button {
+    background: rgba(200, 150, 150, 1.0);
+    border: none;
+    border-radius: 1em;
+}
+
+.delete-button:hover {
+    background: rgba(175, 125, 125, 1.0);
+}
+
 /* Navigation */
 .topnav {
     width: 100%;
