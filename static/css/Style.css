@@ -138,3 +138,15 @@ input[type="number"]::-webkit-inner-spin-button {
 input[type="number"] {
     -moz-appearance: textfield;
 }
+
+button {
+    font-family: 'Roboto', sans-serif;
+    border-width: 0;
+
+    background-color: lightgray;
+    border-color: black;
+}
+
+button:hover {
+    background-color: gray;
+}
