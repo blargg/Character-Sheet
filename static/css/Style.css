@@ -73,6 +73,10 @@ div.nav-item>a {
     text-align: right;
 }
 
+.statBlock {
+    margin: 1em;
+}
+
 .flexContainer {
     display: flex;
     flex-wrap: wrap;
