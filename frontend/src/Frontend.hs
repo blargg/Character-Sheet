@@ -75,6 +75,7 @@ header = do
     elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", static @"css/Style.css")]) $ return ()
     elAttr "link" (M.fromList [("rel", "shortcut icon"), ("href", static @"image/page_icon.png")]) $ return ()
     elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", "https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono")]) $ return ()
+    elAttr "meta" ("name" =: "viewport" <> "content" =: "width=device-width, initial-scale=1.0") $ return ()
 
 sheet_body :: ( DomBuilder t m
               , MonadHold t m
