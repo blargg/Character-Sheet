@@ -191,8 +191,8 @@ combatManuverBlock :: ( DomBuilder t m
                       )
                       => Dynamic t (Abilities Int) -> Dynamic t (ClassData Int) -> m ()
 combatManuverBlock abl cls = statBlock "Combat Mnvr" . grid $ do
-    row $ ct "CMB" >> cellNum (display cmb)
-    row $ ct "CMD" >> cellNum (display cmd)
+    row $ lbl "CMB" >> cellNum (display cmb)
+    row $ lbl "CMD" >> cellNum (display cmd)
     where combatStats = do
               strengthMod <- str <$> absMod
               dexterity <- dex <$> absMod
