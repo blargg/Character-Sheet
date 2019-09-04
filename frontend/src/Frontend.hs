@@ -3,11 +3,13 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 module Frontend (frontend) where
 
 import Control.Monad (join)
 import Control.Monad.Fix
+import Data.Foldable (fold)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Map as M
@@ -130,8 +132,8 @@ abilityBlock' minit = statBlock "Abilities" . grid $ do
 abilityDisplay :: ( DomBuilder t m
                   , PostBuild t m
                   ) => Int -> T.Text -> m (Dynamic t Int)
-abilityDisplay initialValue name = row $ do
-    cell $ text name
+abilityDisplay initialValue nm = row $ do
+    cell $ text nm
     abilityScore <- cell $ fromMaybe 10 <$$> numberInput initialValue
     cellClass "number" $ display (abilityMod <$> abilityScore)
     return abilityScore
@@ -221,7 +223,8 @@ collapseSection isClosed = elDynAttr "div" dynAttrs
           attrs Open = mempty
           dynAttrs = fmap attrs isClosed
 
-armorBlock' :: ( DomBuilder t m
+armorBlock' :: forall t m.
+               ( DomBuilder t m
                , PostBuild t m
                , MonadHold t m
                , MonadFix m
@@ -230,31 +233,57 @@ armorBlock' :: ( DomBuilder t m
                -> Maybe [Armor Int] -- initial value (if avail)
                -> m (Dynamic t [Armor Int])
 armorBlock' abl minit = statBlock' (text "Armor" *> space "0.5em" *> expandCollapseButton Open) $ \open -> mdo
-    E.div $ do
-        display dynAc'
-        E.spanC "label" (text "AC")
-        space "0.5em"
-        display dynFlatFoot'
-        E.spanC "label" (text "Touch")
-    (dynAc', dynFlatFoot', armorList') <- collapseSection open $ mdo
+    armorSummary abl wornArmor'
+    (wornArmor', armorList') <- collapseSection open $ mdo
         let initArmorList = fromMaybe [blankArmor] minit
         let initArmorMap = M.fromList $ enumerate initArmorList
         let addLines = attachWith (\m _ -> nextKey m =: Just blankArmor) (current armorResults) addPressed
             removeLines = (\k -> k =: Nothing) <$> removeEvents armorResults
         armorResults <- grid $ do
-            row $ lbl "name" >> lbl "ac"
+            row $ lbl "name" >> lbl "ac" >> lbl "max dex" >> lbl "acp" >> lbl "spell fail%"
             armorRows initArmorMap (addLines <> removeLines)
         addPressed <- el "div" $ button "Add"
         let armorMap = joinDynThroughMap (fst <$$> armorResults)
-        let armorList = snd <$$> M.toList <$> armorMap
-        let wornArmor = sum . fmap armorClass <$> armorList
-        let dynFlatFoot = (+10) . abilityMod . dex <$> abl
-        let dynAc = (+) <$> wornArmor <*> dynFlatFoot
-        return (dynAc, dynFlatFoot, armorList)
+        let armorList :: Dynamic t [Armor Int]
+            armorList = snd <$$> M.toList <$> armorMap
+        let wornArmor :: Dynamic t (ArmorData Int)
+            wornArmor = fmap fold $ fmap inner <$> armorList
+        return (wornArmor, armorList)
     return armorList'
-    where removeEvents :: (Reflex t) => Dynamic t (M.Map k (b, Event t a)) -> (Event t a)
+    where removeEvents :: forall t' k b a. (Reflex t') => Dynamic t' (M.Map k (b, Event t' a)) -> (Event t' a)
           removeEvents x = switchPromptlyDyn $ leftmost . fmap (snd . snd) . M.toList <$> x
           enumerate = zip [0..]
+
+-- displays a formatted and labeled summary of this armor data
+armorSummary :: ( DomBuilder t m
+                , PostBuild t m)
+                => Dynamic t (Abilities Int) -> Dynamic t (ArmorData Int) -> m ()
+armorSummary abl armorData = E.div $ do
+    let dynFlatFoot = (+10) . abilityMod . dex <$> abl
+    let dynAc = (+) <$> fmap armorClass armorData <*> dynFlatFoot
+    display dynAc
+    lbl' (text "AC")
+    space'
+    display dynFlatFoot
+    lbl' (text "Touch")
+    _ <- dyn $ dispMaxDex . maxDexBonus <$> armorData
+    space'
+    display (armorCheckPenalty <$> armorData)
+    lbl' (text "ACP")
+    dispSpellFail (arcaneSpellFailChance <$> armorData)
+        where dispMaxDex Nothing = return ()
+              dispMaxDex (Just mDex) = do
+                  space'
+                  text . T.pack . show $ mDex
+                  lbl' (text "Max Dex")
+              space' = space "0.5em"
+              lbl' = E.spanC "label"
+              dispSpellFail sf = do
+                  space'
+                  dynText (showPercentage <$> sf)
+                  lbl' (text "Spell Fail")
+
+
 
 nextKey :: (Num k) => M.Map k a -> k
 nextKey = (1+) . fromMaybe 0 . maxKey
@@ -285,10 +314,15 @@ armorRow :: (DomBuilder t m)
             => Armor Int -> m (Dynamic t (Armor Int), Event t ())
 armorRow initialVal = row $ do
     armorNm <- fmap value . cell $ inputElement $ def
-        & inputElementConfig_initialValue .~ (armorName initialVal)
-    armorCls <- cell $ fromMaybe 0 <$$> numberInput (armorClass initialVal)
+        & inputElementConfig_initialValue .~ (name initialVal)
+    let initArmor = inner initialVal
+    armorCls <- cell $ fromMaybe 0 <$$> numberInput (armorClass initArmor)
+    maxDexB <- cell $ numberInput' (maxDexBonus initArmor)
+    acp <- cell $ fromMaybe 0 <$$> numberInput (armorCheckPenalty initArmor)
+    spellFail <- cell $ fromMaybe (Percentage 0) <$$> percentageInput (arcaneSpellFailChance initArmor)
     delEvent <- buttonC "delete-button" "delete"
-    let armorVal = Armor <$> armorNm <*> armorCls
+    let armorData = ArmorData <$> armorCls <*> maxDexB <*> acp <*> spellFail
+    let armorVal = nmd <$> armorNm <*> armorData
     return (armorVal, delEvent)
 
 skillsBlock :: ( DomBuilder t m

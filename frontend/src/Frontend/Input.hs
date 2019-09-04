@@ -9,13 +9,16 @@ module Frontend.Input
     ( Closed(..)
     , buttonC
     , editSpan
+    , percentageInput
     , numberInput
+    , numberInput'
     , expandCollapseButton
     ) where
 
 import Common.Compose
 import Control.Lens
 import Control.Monad.Fix
+import Data.CharacterSheet (Percentage(..))
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Map (Map)
@@ -28,17 +31,29 @@ import Obelisk.Generated.Static
 
 import Frontend.Javascript
 
+-- Editable percentage. Allows for percentages over 100%
+percentageInput :: (DomBuilder t m) => Percentage -> m (Dynamic t (Maybe Percentage))
+percentageInput (Percentage x) = fmap Percentage <$$> numberInput x
+
 numberInput :: ( Read a
                , Show a
                , DomBuilder t m
                )
                => a -> m (Dynamic t (Maybe a))
-numberInput initialVal = parseInput parse numberConfig
+numberInput = numberInput' . Just
+
+-- like number input, but allows empty initial value
+numberInput' :: ( Read a
+               , Show a
+               , DomBuilder t m
+               )
+               => Maybe a -> m (Dynamic t (Maybe a))
+numberInput' initialVal = parseInput parse numberConfig
     where
         numberConfig = def & elConf .~ (  classAttr "numberInput number"
                                        <> "type" =: "number")
                            & inputElementConfig_initialValue
-                             .~ (T.pack . show $ initialVal)
+                             .~ (T.pack . maybe "" show $ initialVal)
         elConf = inputElementConfig_elementConfig . elementConfig_initialAttributes
         parse :: (Read a) => Text -> Maybe a
         parse = readMaybe . T.unpack

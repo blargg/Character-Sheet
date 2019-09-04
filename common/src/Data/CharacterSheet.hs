@@ -9,17 +9,23 @@
 module Data.CharacterSheet
     ( Abilities(..)
     , Ability(..)
-    , Armor(..)
+    , Armor
+    , ArmorData(..)
     , CharacterSheet(..)
     , ClassData(..)
+    , Percentage(..)
+    , Named(..)
+    , Nmd
     , Skill(..)
     , abilityMod
     , blankArmor
     , blankClass
     , blankSkill
     , chHealth
+    , nmd
     , pathfinderSkills
     , shortName
+    , showPercentage
     , skillBonus
     ) where
 
@@ -30,6 +36,7 @@ import Data.Functor.Rep
 import qualified Data.Map as M
 import Data.Map (Map)
 import Data.Text (Text)
+import qualified Data.Text as T
 import GHC.Generics
 
 data CharacterSheet a =
@@ -92,15 +99,69 @@ instance Representable Abilities where
 abilityMod :: (Integral a) => a -> a
 abilityMod score = (score - 10) `div` 2
 
-data Armor a = Armor { armorName :: Text
-                     , armorClass :: a
-                     }
-                     deriving (Generic, ToJSON, FromJSON, Read, Show)
+data Named a b = Named { name :: a
+                       , inner :: b
+                       }
+                       deriving (Generic, ToJSON, FromJSON, Read, Show)
+
+type Nmd b = Named Text b
+
+nmd :: Text -> a -> Nmd a
+nmd n v = Named n v
+
+type Armor a = Nmd (ArmorData a)
+
+data ArmorData a = ArmorData { armorClass :: a
+                             , maxDexBonus :: Maybe a
+                             , armorCheckPenalty :: a
+                             , arcaneSpellFailChance :: Percentage
+                             }
+                             deriving (Generic, ToJSON, FromJSON, Read, Show)
+
+instance (Num a, Ord a) => Semigroup (ArmorData a) where
+    (ArmorData { armorClass = xCls
+              , maxDexBonus = xMDex
+              , armorCheckPenalty = xACP
+              , arcaneSpellFailChance = xSpellFail
+              }) <>
+                  (ArmorData { armorClass = yCls
+              , maxDexBonus = yMDex
+              , armorCheckPenalty = yACP
+              , arcaneSpellFailChance = ySpellFail
+              })
+                = ArmorData { armorClass = xCls + yCls
+                            , maxDexBonus = dexMin xMDex yMDex
+                            , armorCheckPenalty = xACP + yACP
+                            , arcaneSpellFailChance = pAdd xSpellFail ySpellFail
+                            }
+                                where dexMin Nothing x = x
+                                      dexMin x Nothing = x
+                                      dexMin (Just x) (Just y) = Just $ min x y
+
+instance (Num a, Ord a) => Monoid (ArmorData a) where
+    mempty = ArmorData { armorClass = 0
+                       , maxDexBonus = Nothing
+                       , armorCheckPenalty = 0
+                       , arcaneSpellFailChance = Percentage 0
+                       }
+
 
 blankArmor :: Armor Int
-blankArmor = Armor { armorName = ""
-                   , armorClass = 0
-                   }
+blankArmor = nmd "" mempty
+
+-- repersents a percentage.
+-- Convert to a float by dividing by 100.
+newtype Percentage = Percentage Int
+    deriving (Generic, ToJSON, FromJSON, Read, Show)
+
+-- Sum of percentages.
+-- For probabilities `a` and `b` that are mutually distinct,
+-- this is the prob of `a or b`.
+pAdd :: Percentage -> Percentage -> Percentage
+pAdd (Percentage x) (Percentage y) = Percentage (x + y)
+
+showPercentage :: Percentage -> Text
+showPercentage (Percentage x) = T.pack $ show x ++ "%"
 
 data ClassData a = ClassData { className :: Text
                              , level :: a
