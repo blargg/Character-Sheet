@@ -22,6 +22,7 @@ module Data.CharacterSheet
     , blankClass
     , blankSkill
     , chHealth
+    , initiative'
     , nmd
     , pathfinderSkills
     , shortName
@@ -103,6 +104,9 @@ data Named a b = Named { name :: a
                        , inner :: b
                        }
                        deriving (Generic, ToJSON, FromJSON, Read, Show)
+
+initiative' :: (Integral a) => Abilities a -> a -> a
+initiative' abl bonus = abilityMod (dex abl) + bonus
 
 type Nmd b = Named Text b
 

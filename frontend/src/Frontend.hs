@@ -92,6 +92,7 @@ sheet_body = do
             abl' <- abilityBlock
             healthBlock abl' cls
             combatManuverBlock abl' cls
+            initiativeBlock abl'
             return abl'
         cls <- classBlock
     _ <- armorBlock abl -- armor class
@@ -205,6 +206,30 @@ combatManuverBlock abl cls = statBlock "Combat Mnvr" . grid $ do
           cmd = snd <$> combatStats
           absMod = abilityMod <$$> abl
           cellNum = cellClass "number"
+
+initiativeBlock :: ( DomBuilder t m
+                   , MonadFix m
+                   , PostBuild t m
+                   , MonadHold t m
+                   , Prerender js t m
+                   )
+                   => Dynamic t (Abilities Int) -> m ()
+initiativeBlock abl = () <$ prerenderStash K.Initiative (initiativeBlock' abl)
+
+initiativeBlock' :: ( DomBuilder t m
+                    , MonadFix m
+                    , PostBuild t m
+                    )
+                    => Dynamic t (Abilities Int)
+                    -> Maybe Int
+                    -> m (Dynamic t Int)
+initiativeBlock' abl mbonus = statBlock "Initiative" . grid $ mdo
+    let total = initiative' <$> abl <*> bonus
+    row $ lbl "total" >> lbl "bonus"
+    bonus <- row $ do
+        cellClass "number" $ E.span (display total)
+        cell $ fromMaybe 0 <$$> numberInput (fromMaybe 0 mbonus)
+    return bonus
 
 armorBlock :: ( DomBuilder t m
               , MonadHold t m
