@@ -26,6 +26,7 @@ library
     Frontend.Layout
   other-modules:
     Frontend.About
+    Frontend.Armor
     Frontend.Elements
     Frontend.Storage
     Frontend.Javascript
