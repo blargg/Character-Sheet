@@ -30,6 +30,7 @@ import Frontend.Javascript
 -- Defines all the storage locations for session storage
 data StorageKey = Abilities
                 | Armor
+                | Attacks
                 | Class
                 | Health
                 | Name

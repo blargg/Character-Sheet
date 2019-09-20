@@ -95,7 +95,7 @@ div.nav-item>a {
     padding: 0 0.5em 0 0;
 }
 
-.cell input {
+.cell>input {
     display: block;
     margin: 0 auto;
 }

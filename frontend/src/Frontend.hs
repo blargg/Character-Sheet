@@ -95,6 +95,7 @@ sheet_body = do
             initiativeBlock abl'
             return abl'
         cls <- classBlock
+    attacksBlock
     _ <- armorBlock abl -- armor class
     _ <- skillsBlock abl pathfinderSkills -- skill map
     return ()
@@ -230,6 +231,31 @@ initiativeBlock' abl mbonus = statBlock "Initiative" . grid $ mdo
         cellClass "number" $ E.span (display total)
         cell $ fromMaybe 0 <$$> numberInput (fromMaybe 0 mbonus)
     return bonus
+
+attacksBlock :: ( DomBuilder t m
+                , MonadHold t m
+                , PostBuild t m
+                , MonadFix m
+                , Prerender js t m
+                ) => m ()
+attacksBlock = () <$ prerenderStash K.Attacks attacksBlock'
+
+attacksBlock' :: (DomBuilder t m) => Maybe Attack -> m (Dynamic t Attack)
+attacksBlock' initAttacks = statBlock "Attacks" . grid $ do
+    row $ lbl "name" >> lbl "roll" >> lbl "attack bonus"
+    let attks = fromMaybe blankAttack initAttacks
+    let initStats = inner attks
+    nameEl <- cell . inputElement $ def &
+        inputElementConfig_initialValue .~ (name attks)
+    (numDice, diceValue) <- cell $ do
+        numDice' <- E.span $ fromMaybe 0 <$$> numberInput (numberOfDice initStats)
+        E.span (text "d")
+        diceValue' <- E.span $ maybe (d 2) d <$$> numberInput (highestFaceValue . diceKind $ initStats)
+        return (numDice', diceValue')
+    atkBonus <- cell $ fromMaybe 0 <$$> numberInput (attackBonus initStats)
+    let dStats = AttackStats <$> numDice <*> diceValue <*> atkBonus
+    return $ nmd <$> value nameEl <*> dStats
+        where blankAttack = nmd "" (AttackStats 0 (d 6) 0)
 
 skillsBlock :: ( DomBuilder t m
                , MonadFix m

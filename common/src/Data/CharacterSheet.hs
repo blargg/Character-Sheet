@@ -11,8 +11,12 @@ module Data.CharacterSheet
     , Ability(..)
     , Armor
     , ArmorData(..)
+    , Attack
+    , AttackStats(..)
     , CharacterSheet(..)
     , ClassData(..)
+    , Die
+    , Dice(..)
     , Percentage(..)
     , Named(..)
     , Nmd
@@ -22,6 +26,8 @@ module Data.CharacterSheet
     , blankClass
     , blankSkill
     , chHealth
+    , d -- single die
+    , highestFaceValue
     , initiative'
     , nmd
     , pathfinderSkills
@@ -205,6 +211,31 @@ shortName Constitution = "Con"
 shortName Wisdom = "Wis"
 shortName Intelligence = "Int"
 shortName Charisma = "Cha"
+
+-- A single dice
+data Die = D Int
+    deriving (Generic, ToJSON, FromJSON, Read, Show)
+
+d :: Int -> Die
+d x = if x <= 0
+         then error "invalid die value"
+         else D x
+
+highestFaceValue :: Die -> Int
+highestFaceValue (D x) = x
+
+data Dice = Dice { diceFreq :: M.Map Die Int
+                 }
+
+data AttackStats = AttackStats { -- The number of dice to roll
+                                 numberOfDice :: Int
+                                 -- The kind of dice (d2, d3, d6, etc)
+                               , diceKind :: Die
+                               , attackBonus :: Int
+                               }
+                               deriving (Generic, ToJSON, FromJSON, Read, Show)
+
+type Attack = Nmd AttackStats
 
 data Skill = Skill { skillName :: Text
                    , isClassSkill :: Bool
