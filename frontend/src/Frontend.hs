@@ -74,6 +74,8 @@ navItem selected linkTo = E.divC cl $ routeLink (linkTo :/ ()) $ text (pageName 
 header :: (DomBuilder t m) => m ()
 header = do
     el "title" $ text "Character Sheet"
+    elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", static @"materialize/css/materialize.min.css")]) $ return ()
+    elAttr "script" (M.fromList [("type", "text/javascript"), ("src", static @"materialize/js/materialize.min.js")]) $ return ()
     elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", static @"css/Style.css")]) $ return ()
     elAttr "link" (M.fromList [("rel", "shortcut icon"), ("href", static @"image/page_icon.png")]) $ return ()
     elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", "https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono")]) $ return ()
@@ -289,7 +291,7 @@ skillLine abls initSkillMap skillTitle abl = row $ do
     let initSkill = fromMaybe blankSkill (M.lookup skillTitle initSkillMap)
     ct skillTitle
     ct . shortName $ abl
-    classCB <- cell $ checkbox (isClassSkill initSkill) def
+    classCB <- cell . el "label" $ checkbox (isClassSkill initSkill) def <* E.span (text "")
     ranks <- cell $ fromMaybe 0 <$$> numberInput (skillRanks initSkill)
     miscMod <- cell $ fromMaybe 0 <$$> numberInput (skillMod initSkill)
     let sk = Skill <$> pure skillTitle <*> value classCB <*> pure abl <*> ranks <*> miscMod

@@ -34,8 +34,8 @@ statBlock :: (DomBuilder t m) => Text -> m a -> m a
 statBlock title = statBlock' (text title) . const
 
 statBlock' :: (DomBuilder t m) => m b -> (b -> m a) -> m a
-statBlock' titleWidget innerWidget = elClass "div" "statBlock" $ do
-    headerValue <- elClass "h3" "blockHeader" $ titleWidget
+statBlock' titleWidget innerWidget = elClass "div" "card z-depth-2 statBlock" $ do
+    headerValue <- elClass "h4" "blockHeader" $ titleWidget
     innerWidget headerValue
 
 space :: (DomBuilder t m) => Text -> m ()
