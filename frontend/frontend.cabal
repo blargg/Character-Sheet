@@ -28,6 +28,9 @@ library
     Frontend.About
     Frontend.Armor
     Frontend.Elements
+    Frontend.Materialize
+    Frontend.Prelude
+    Frontend.Spells
     Frontend.Storage
     Frontend.Javascript
   ghc-options: -Wall

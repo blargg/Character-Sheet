@@ -76,26 +76,24 @@ armorSummary abl armorData = E.div $ do
     let dynFlatFoot = (+10) . abilityMod . dex <$> abl
     let dynAc = (+) <$> fmap armorClass armorData <*> dynFlatFoot
     display dynAc
-    lbl' (text "AC")
+    lbl' "AC"
     space'
     display dynFlatFoot
-    lbl' (text "Touch")
+    lbl' "Touch"
     _ <- dyn $ dispMaxDex . maxDexBonus <$> armorData
     space'
     display (armorCheckPenalty <$> armorData)
-    lbl' (text "ACP")
+    lbl' "ACP"
     dispSpellFail (arcaneSpellFailChance <$> armorData)
         where dispMaxDex Nothing = return ()
               dispMaxDex (Just mDex) = do
                   space'
                   text . T.pack . show $ mDex
-                  lbl' (text "Max Dex")
-              space' = space "0.5em"
-              lbl' = E.spanC "label"
+                  lbl' "Max Dex"
               dispSpellFail sf = do
                   space'
                   dynText (showPercentage <$> sf)
-                  lbl' (text "Spell Fail")
+                  lbl' "Spell Fail"
 
 
 

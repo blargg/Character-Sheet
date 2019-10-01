@@ -4,8 +4,10 @@ module Frontend.Layout
     , cellClass
     , grid
     , labelCell
+    , lbl'
     , row
     , space
+    , space'
     , statBlock
     , statBlock'
     )where
@@ -19,7 +21,7 @@ grid :: (DomBuilder t m) => m a -> m a
 grid = elClass "div" "grid"
 
 row :: (DomBuilder t m) => m a -> m a
-row = elClass "div" "row"
+row = elClass "div" "trow"
 
 cell :: (DomBuilder t m) => m a -> m a
 cell = elClass "div" "cell"
@@ -29,6 +31,9 @@ cellClass cl = elClass "div" ("cell " `mappend` cl)
 
 labelCell :: (DomBuilder t m) => Text -> m ()
 labelCell = cellClass "label" . text
+
+lbl' :: (DomBuilder t m) => Text -> m ()
+lbl' = E.spanC "label" . text
 
 statBlock :: (DomBuilder t m) => Text -> m a -> m a
 statBlock title = statBlock' (text title) . const
@@ -40,3 +45,7 @@ statBlock' titleWidget innerWidget = elClass "div" "card z-depth-2 statBlock" $ 
 
 space :: (DomBuilder t m) => Text -> m ()
 space width = E.spanAttr ("style" =: ("display:inline-block; width: " <> width)) $ pure ()
+
+-- typical single space
+space' :: (DomBuilder t m) => m ()
+space' = space "0.5em"

@@ -21,7 +21,6 @@ import Control.Monad.Fix
 import Data.CharacterSheet (Percentage(..))
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Map (Map)
 import Data.Maybe (fromMaybe)
 import Text.Read (readMaybe)
 
@@ -29,6 +28,7 @@ import Language.Javascript.JSaddle
 import Reflex.Dom.Core
 import Obelisk.Generated.Static
 
+import Frontend.Prelude
 import Frontend.Javascript
 
 -- Editable percentage. Allows for percentages over 100%
@@ -58,11 +58,6 @@ numberInput' initialVal = parseInput parse numberConfig
         parse :: (Read a) => Text -> Maybe a
         parse = readMaybe . T.unpack
 
-type Attr = Map AttributeName Text
-
--- Constructs Attr for a class string.
-classAttr :: Text -> Attr
-classAttr classes = (AttributeName Nothing "class") =: classes
 
 -- TODO set a class depending on valid or invalid
 parseInput :: (DomBuilder t m)

@@ -17,5 +17,6 @@ library
   exposed-modules:
     Common.Api
     Common.Compose
+    Common.Prelude
     Common.Route
     Data.CharacterSheet

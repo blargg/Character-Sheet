@@ -14,13 +14,23 @@ module Data.CharacterSheet
     , Attack
     , AttackStats(..)
     , CharacterSheet(..)
+    , Class(..)
     , ClassData(..)
-    , Die
     , Dice(..)
-    , Percentage(..)
+    , Die
+    , Fmt(..)
+    , GameDuration(..)
     , Named(..)
     , Nmd
+    , Percentage(..)
+    , SavingThrow(..)
+    , School(..)
     , Skill(..)
+    , Spell(..)
+    , SpellComp(..)
+    , SpellLevel(..)
+    , SpellLevelList(..)
+    , Target(..)
     , abilityMod
     , blankArmor
     , blankClass
@@ -31,6 +41,7 @@ module Data.CharacterSheet
     , initiative'
     , nmd
     , pathfinderSkills
+    , fmtComps
     , shortName
     , showPercentage
     , skillBonus
@@ -40,11 +51,21 @@ import Data.Aeson
 import Data.Distributive
 import Data.Functor.Identity
 import Data.Functor.Rep
-import qualified Data.Map as M
+import qualified Data.List as List
 import Data.Map (Map)
+import qualified Data.Map as M
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics
+
+import Common.Prelude
+
+-- Class for things that have a text representation that can be shown to the
+-- user
+class Fmt a where
+    fmt :: a -> Text
 
 data CharacterSheet a =
     CharacterSheet { abilities :: Abilities a
@@ -261,6 +282,89 @@ skillBonus :: Abilities Int -> Skill -> Int
 skillBonus abl sk = ablMod + skillRanks sk + skillMod sk + classSkillBonus sk
     where ability = abilityType sk
           ablMod = abilityMod (index abl ability)
+
+-- Spell components, represent materials and actions required to cast a spell
+data SpellComp = Verbal | Somantic | Material | Focus | DevineFocus
+    deriving (Eq, Ord)
+
+instance Fmt SpellComp where
+    fmt Verbal = "Verbal"
+    fmt Somantic = "Somantic"
+    fmt Material = "Material"
+    fmt Focus = "Focus"
+    fmt DevineFocus = "DevineFocus"
+
+fmtComps :: Set SpellComp -> Text
+fmtComps scs = mconcat $ List.intersperse ", " $ fmap fmt $ Set.toList scs
+
+data GameDuration = FreeAction
+                  | StandardAction
+                  | FullRound
+
+instance Fmt GameDuration where
+    fmt FreeAction = "Free Action"
+    fmt StandardAction = "Standard Action"
+    fmt FullRound = "Full Round"
+
+data SavingThrow = Fort | Ref | Will | None
+
+instance Fmt SavingThrow where
+    fmt Fort = "Fortitude"
+    fmt Ref = "Reflex"
+    fmt Will = "Will Power"
+    fmt None = "None"
+
+data School = Abjuration
+            | Conjuration
+            | Divination
+            | Enchantment
+            | Evocation
+            | Illusion
+            | Necromancy
+
+-- spell level. This is distinct from character level.
+newtype SpellLevel = SpellLevel Int
+    deriving (Eq)
+
+data SpellLevelList = SpellLevelList (Map Class SpellLevel)
+
+data Class = Bard
+           | Barbarian
+           | Cleric
+           | Druid
+           | Fighter
+           | Monk
+           | Paladin
+           | Ranger
+           | Rogue
+           | Sorcerer
+           | Wizard
+           | Other Text
+           deriving (Eq, Ord, Show)
+
+data Target = Personal -- affects only yourself
+            | Area
+            | Creatures Int
+
+instance Fmt Target where
+    fmt Personal = "Personal"
+    fmt Area = "Area"
+    fmt (Creatures 1) = "Single"
+    fmt (Creatures n) = showT n <> " creatures"
+
+-- Defines a spell that can be cast
+data Spell = Spell
+    { spellName :: Text
+    , spellLevel :: SpellLevelList
+    , description :: Text
+    , components :: Set SpellComp
+    , castTime :: GameDuration
+    , duration :: Text
+    , range :: Text
+    , savingThrow :: SavingThrow
+    , spellResist :: Bool
+    , target :: Target
+    }
 
 pathfinderSkills :: Map Text Ability
 pathfinderSkills = M.fromList [ ("Acrobatics", Dexterity)

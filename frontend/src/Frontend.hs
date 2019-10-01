@@ -22,10 +22,12 @@ import Data.CharacterSheet
 import Frontend.Armor
 import Frontend.Input
 import Frontend.Layout
+import Frontend.Spells (spells_page)
 import Frontend.Storage hiding (StorageKey(..))
 import qualified Frontend.Storage as K
 import qualified Frontend.About as About
 import qualified Frontend.Elements as E
+import qualified Frontend.Materialize as Mat
 
 import Obelisk.Route.Frontend
 import Obelisk.Generated.Static
@@ -88,7 +90,18 @@ sheet_body :: ( DomBuilder t m
               , PostBuild t m
               )
               => m ()
-sheet_body = do
+sheet_body = Mat.tabs "mainTab" $
+    (1 :: Int) =: ("Stats", stat_page)
+    <> 2 =: ("Spells", spells_page)
+
+stat_page :: ( DomBuilder t m
+             , MonadHold t m
+             , MonadFix m
+             , Prerender js t m
+             , PostBuild t m
+             )
+             => m ()
+stat_page = do
     _ <- characterName
     rec abl <- flex $ do
             abl' <- abilityBlock
