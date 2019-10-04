@@ -9,32 +9,42 @@
 module Backend where
 
 import Common.Route
+import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Reader
 import Data.CharacterSheet
 import Data.Dependent.Sum
 import Data.Functor.Identity
 import Data.Maybe (fromMaybe)
 import qualified Data.Set as Set
-import Data.Text (Text)
-import qualified Data.Text as Text
 import Obelisk.Backend
 import Obelisk.Route
 import Snap
 import qualified Data.Aeson as Aeson
 
+import Backend.Database as DB
 import Common.Api
 import Common.Prelude
 
+import Database.Persist.Sqlite
+
 backend :: Backend BackendRoute FrontendRoute
 backend = Backend
-  { _backend_run = \serve -> serve server
+  { _backend_run = run_backend
   , _backend_routeEncoder = backendRouteEncoder
   }
 
-server :: R BackendRoute -> Snap ()
-server (BackendRoute_Missing :=> Identity ()) = writeBS "missing"
-server (BackendRoute_API :=> Identity _) = dir "api" $
+run_backend :: ((R BackendRoute -> Snap ()) -> IO ()) -> IO ()
+run_backend serve = do
+    runSqlite ":memory:" $ do
+        createDatabase exampleSpells
+        sql <- ask
+        liftIO $ serve (server sql)
+
+server :: SqlBackend -> R BackendRoute -> Snap ()
+server _ (BackendRoute_Missing :=> Identity ()) = writeBS "missing"
+server sql (BackendRoute_API :=> Identity _) = dir "api" $
     route [ ("echo/:echoparam", echoHandler)
-          , ("spelllist/", spellListHandler)
+          , ("spelllist/", runReaderT spellListHandler sql)
           ]
 
 echoHandler :: Snap ()
@@ -43,20 +53,14 @@ echoHandler = do
     param <- getParam "echoparam"
     maybe (writeBS "must specify echo/param in URL") writeBS param
 
-spellListHandler :: Snap ()
+spellListHandler :: ReaderT SqlBackend Snap ()
 spellListHandler = do
     rb <- readRequestBody 2048
     let m_search = Aeson.decode rb :: Maybe SpellSearch
-    writeLBS . Aeson.encode $ searchSpells m_search
-
-searchSpells :: Maybe SpellSearch -> [Spell]
-searchSpells Nothing = exampleSpells
-searchSpells (Just SpellSearch{..}) =
-    let pre = fromMaybe "" prefix
-     in filter (spellFilter pre) exampleSpells
-
-spellFilter :: Text -> Spell -> Bool
-spellFilter search sp = Text.isPrefixOf search (spellName sp)
+        search = fromMaybe (SpellSearch { prefix = Just "" }) m_search
+    sps <- searchSpells search
+    liftIO . putStrLn $ "spells retrieved: " ++ show (length sps)
+    writeLBS . Aeson.encode $ sps
 
 -- example list of spells for initial testing
 exampleSpells :: [Spell]
@@ -85,5 +89,5 @@ ray_of_frost = Spell { spellName = "ray of frost"
                  , range = "25ft + 5ft / 2 level"
                  , savingThrow = None
                  , spellResist = True
-                 , target = Creatures 1
+                 , target = Creature
                  }

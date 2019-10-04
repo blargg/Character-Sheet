@@ -8,17 +8,25 @@ library
   if impl(ghcjs)
     buildable: False
   build-depends: base
+               , HDBC
+               , HDBC-sqlite3
                , aeson
                , common
                , containers
                , dependent-sum
+               , esqueleto
                , frontend
                , obelisk-backend
                , obelisk-route
+               , persistent
+               , persistent-sqlite
+               , persistent-template
                , snap
                , text
   exposed-modules:
     Backend
+  other-modules:
+    Backend.Database
   ghc-options: -Wall
 
 executable backend

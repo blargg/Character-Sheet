@@ -60,8 +60,6 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics
 
-import Common.Prelude
-
 -- Class for things that have a text representation that can be shown to the
 -- user
 class Fmt a where
@@ -285,7 +283,7 @@ skillBonus abl sk = ablMod + skillRanks sk + skillMod sk + classSkillBonus sk
 
 -- Spell components, represent materials and actions required to cast a spell
 data SpellComp = Verbal | Somantic | Material | Focus | DevineFocus
-    deriving (Eq, Ord, Generic, ToJSON, FromJSON)
+    deriving (Eq, Ord, Generic, ToJSON, FromJSON, Enum)
 
 instance Fmt SpellComp where
     fmt Verbal = "Verbal"
@@ -300,7 +298,7 @@ fmtComps scs = mconcat $ List.intersperse ", " $ fmap fmt $ Set.toList scs
 data GameDuration = FreeAction
                   | StandardAction
                   | FullRound
-    deriving (Generic, ToJSON, FromJSON)
+    deriving (Generic, ToJSON, FromJSON, Enum)
 
 instance Fmt GameDuration where
     fmt FreeAction = "Free Action"
@@ -308,7 +306,7 @@ instance Fmt GameDuration where
     fmt FullRound = "Full Round"
 
 data SavingThrow = Fort | Ref | Will | None
-    deriving (Generic, ToJSON, FromJSON)
+    deriving (Generic, ToJSON, FromJSON, Enum)
 
 instance Fmt SavingThrow where
     fmt Fort = "Fortitude"
@@ -348,25 +346,24 @@ data Class = Bard
 
 data Target = Personal -- affects only yourself
             | Area
-            | Creatures Int
-    deriving (Generic, ToJSON, FromJSON)
+            | Creature
+    deriving (Generic, ToJSON, FromJSON, Enum)
 
 instance Fmt Target where
     fmt Personal = "Personal"
     fmt Area = "Area"
-    fmt (Creatures 1) = "Single"
-    fmt (Creatures n) = showT n <> " creatures"
+    fmt Creature = "Creature"
 
 -- Defines a spell that can be cast
 data Spell = Spell
-    { spellName :: Text
-    , spellLevel :: SpellLevelList
-    , description :: Text
+    { castTime :: GameDuration
     , components :: Set SpellComp
-    , castTime :: GameDuration
+    , description :: Text
     , duration :: Text
     , range :: Text
     , savingThrow :: SavingThrow
+    , spellLevel :: SpellLevelList
+    , spellName :: Text
     , spellResist :: Bool
     , target :: Target
     }
