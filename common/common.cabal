@@ -10,6 +10,7 @@ library
                , aeson
                , containers
                , distributive
+               , esqueleto
                , mtl
                , obelisk-route
                , reflex-dom

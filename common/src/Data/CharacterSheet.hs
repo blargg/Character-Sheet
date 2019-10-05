@@ -58,6 +58,7 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as T
+import Database.Esqueleto
 import GHC.Generics
 
 -- Class for things that have a text representation that can be shown to the
@@ -306,7 +307,7 @@ instance Fmt GameDuration where
     fmt FullRound = "Full Round"
 
 data SavingThrow = Fort | Ref | Will | None
-    deriving (Generic, ToJSON, FromJSON, Enum)
+    deriving (Generic, ToJSON, FromJSON, Enum, Show)
 
 instance Fmt SavingThrow where
     fmt Fort = "Fortitude"
@@ -406,3 +407,12 @@ pathfinderSkills = M.fromList [ ("Acrobatics", Dexterity)
                               , ("Swim", Strength)
                               , ("Use Magic Device", Charisma)
                               ]
+
+-- ### Database feilds ###
+instance PersistField SavingThrow where
+    toPersistValue = PersistInt64 . fromIntegral . fromEnum
+    fromPersistValue (PersistInt64 x) = Right . toEnum . fromIntegral $ x
+    fromPersistValue _ = Left "PersistField.SavingThrow.fromPersistValue called on wrong data type"
+
+instance PersistFieldSql SavingThrow where
+    sqlType _ = SqlInt32

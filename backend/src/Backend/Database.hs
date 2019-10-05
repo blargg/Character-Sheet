@@ -34,7 +34,13 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 SpellRow
     name String
     castTime Int
+    components Int
     description String
+    duration String
+    range String
+    savingThrow SavingThrow
+    resist Bool
+    target Int
     deriving Show
 SpellLevelRow
     spellId SpellRowId
@@ -50,26 +56,40 @@ createDatabase spells = do
     return ()
 
 toSpellRow :: Spell -> SpellRow
-toSpellRow Spell{..} = SpellRow { spellRowName = Text.unpack spellName
+toSpellRow Spell{..} = SpellRow { spellRowName = unpack spellName
                                 , spellRowCastTime = fromEnum castTime
-                                , spellRowDescription = Text.unpack description
+                                , spellRowComponents = toBitVec components
+                                , spellRowDescription = unpack description
+                                , spellRowDuration = unpack duration
+                                , spellRowRange = unpack range
+                                , spellRowSavingThrow = savingThrow
+                                , spellRowResist = spellResist
+                                , spellRowTarget = fromEnum target
                                 }
+                                    where unpack = Text.unpack
 
 fromSpellRow :: SpellRow -> Spell
 fromSpellRow SpellRow { spellRowName
                       , spellRowCastTime
+                      , spellRowComponents
                       , spellRowDescription
+                      , spellRowDuration
+                      , spellRowRange
+                      , spellRowSavingThrow
+                      , spellRowResist
+                      , spellRowTarget
                       } = Spell { spellName = Text.pack spellRowName
                                 , castTime = toEnum spellRowCastTime
                                 , description = Text.pack spellRowDescription
-                                , components = mempty
-                                , duration = ""
-                                , range = ""
-                                , savingThrow = Ref
+                                , components = fromBitVec spellRowComponents
+                                , duration = pack spellRowDuration
+                                , range = pack spellRowRange
+                                , savingThrow = spellRowSavingThrow
                                 , spellLevel = SpellLevelList mempty
-                                , spellResist = True
-                                , target = Creature
+                                , spellResist = spellRowResist
+                                , target = toEnum spellRowTarget
                                 }
+                                    where pack = Text.pack
 
 searchSpells :: (MonadIO m) => SpellSearch -> ReaderT SqlBackend m [Spell]
 searchSpells SpellSearch{ prefix } =
