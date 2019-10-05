@@ -22,9 +22,7 @@ import Control.Monad.Reader
 import Data.Bits
 import Data.Maybe (fromMaybe)
 import Data.Set (Set)
-import qualified Data.Set as Set
 import Data.Text (Text)
-import qualified Data.Text as Text
 import Data.CharacterSheet hiding (name)
 
 import Database.Esqueleto
@@ -98,11 +96,3 @@ searchSpells SpellSearch{ prefix } =
         let qPrefix = fromMaybe "" prefix <> "%"
         where_ (sp ^. SpellRowName `like` val qPrefix)
         return sp
-
-
-toBitVec :: (Enum e) => Set e -> Int
-toBitVec = sum . fmap ((2^) . fromEnum) . Set.toList
-
-fromBitVec :: (Ord e, Enum e) => Int -> Set e
-fromBitVec bv = Set.fromList $ fmap (toEnum . fromIntegral) $
-    filter (testBit bv) [0..finiteBitSize bv]
