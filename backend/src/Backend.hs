@@ -37,6 +37,7 @@ run_backend :: ((R BackendRoute -> Snap ()) -> IO ()) -> IO ()
 run_backend serve = do
     runSqlite ":memory:" $ do
         createDatabase exampleSpells
+        transactionSave
         sql <- ask
         liftIO $ serve (server sql)
 
