@@ -284,7 +284,7 @@ skillBonus abl sk = ablMod + skillRanks sk + skillMod sk + classSkillBonus sk
 
 -- Spell components, represent materials and actions required to cast a spell
 data SpellComp = Verbal | Somantic | Material | Focus | DevineFocus
-    deriving (Eq, Ord, Generic, ToJSON, FromJSON, Enum)
+    deriving (Eq, Ord, Generic, ToJSON, FromJSON, Enum, Show)
 
 instance Fmt SpellComp where
     fmt Verbal = "Verbal"
@@ -299,7 +299,7 @@ fmtComps scs = mconcat $ List.intersperse ", " $ fmap fmt $ Set.toList scs
 data GameDuration = FreeAction
                   | StandardAction
                   | FullRound
-    deriving (Generic, ToJSON, FromJSON, Enum)
+    deriving (Generic, ToJSON, FromJSON, Enum, Show)
 
 instance Fmt GameDuration where
     fmt FreeAction = "Free Action"
@@ -348,7 +348,7 @@ data Class = Bard
 data Target = Personal -- affects only yourself
             | Area
             | Creature
-    deriving (Generic, ToJSON, FromJSON, Enum)
+    deriving (Generic, ToJSON, FromJSON, Enum, Show)
 
 instance Fmt Target where
     fmt Personal = "Personal"
@@ -415,4 +415,28 @@ instance PersistField SavingThrow where
     fromPersistValue _ = Left "PersistField.SavingThrow.fromPersistValue called on wrong data type"
 
 instance PersistFieldSql SavingThrow where
+    sqlType _ = SqlInt32
+
+instance PersistField SpellComp where
+    toPersistValue = PersistInt64 . fromIntegral . fromEnum
+    fromPersistValue (PersistInt64 x) = Right . toEnum . fromIntegral $ x
+    fromPersistValue _ = Left "PersistField.SavingThrow.fromPersistValue called on wrong data type"
+
+instance PersistFieldSql SpellComp where
+    sqlType _ = SqlInt32
+
+instance PersistField GameDuration where
+    toPersistValue = PersistInt64 . fromIntegral . fromEnum
+    fromPersistValue (PersistInt64 x) = Right . toEnum . fromIntegral $ x
+    fromPersistValue _ = Left "PersistField.SavingThrow.fromPersistValue called on wrong data type"
+
+instance PersistFieldSql GameDuration where
+    sqlType _ = SqlInt32
+
+instance PersistField Target where
+    toPersistValue = PersistInt64 . fromIntegral . fromEnum
+    fromPersistValue (PersistInt64 x) = Right . toEnum . fromIntegral $ x
+    fromPersistValue _ = Left "PersistField.SavingThrow.fromPersistValue called on wrong data type"
+
+instance PersistFieldSql Target where
     sqlType _ = SqlInt32

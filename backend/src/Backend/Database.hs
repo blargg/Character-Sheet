@@ -23,6 +23,7 @@ import Data.Bits
 import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import qualified Data.Set as Set
+import Data.Text (Text)
 import qualified Data.Text as Text
 import Data.CharacterSheet hiding (name)
 
@@ -32,19 +33,19 @@ import Common.Api
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 SpellRow
-    name String
-    castTime Int
-    components Int
-    description String
-    duration String
-    range String
+    name Text
+    castTime GameDuration
+    components (Set SpellComp)
+    description Text
+    duration Text
+    range Text
     savingThrow SavingThrow
     resist Bool
-    target Int
+    target Target
     deriving Show
 SpellLevelRow
     spellId SpellRowId
-    className String
+    className Text
     spellLevel Int
     deriving Show
 |]
@@ -56,17 +57,16 @@ createDatabase spells = do
     return ()
 
 toSpellRow :: Spell -> SpellRow
-toSpellRow Spell{..} = SpellRow { spellRowName = unpack spellName
-                                , spellRowCastTime = fromEnum castTime
-                                , spellRowComponents = toBitVec components
-                                , spellRowDescription = unpack description
-                                , spellRowDuration = unpack duration
-                                , spellRowRange = unpack range
+toSpellRow Spell{..} = SpellRow { spellRowName = spellName
+                                , spellRowCastTime = castTime
+                                , spellRowComponents = components
+                                , spellRowDescription = description
+                                , spellRowDuration = duration
+                                , spellRowRange = range
                                 , spellRowSavingThrow = savingThrow
                                 , spellRowResist = spellResist
-                                , spellRowTarget = fromEnum target
+                                , spellRowTarget = target
                                 }
-                                    where unpack = Text.unpack
 
 fromSpellRow :: SpellRow -> Spell
 fromSpellRow SpellRow { spellRowName
@@ -78,25 +78,24 @@ fromSpellRow SpellRow { spellRowName
                       , spellRowSavingThrow
                       , spellRowResist
                       , spellRowTarget
-                      } = Spell { spellName = Text.pack spellRowName
-                                , castTime = toEnum spellRowCastTime
-                                , description = Text.pack spellRowDescription
-                                , components = fromBitVec spellRowComponents
-                                , duration = pack spellRowDuration
-                                , range = pack spellRowRange
+                      } = Spell { spellName = spellRowName
+                                , castTime = spellRowCastTime
+                                , description = spellRowDescription
+                                , components = spellRowComponents
+                                , duration = spellRowDuration
+                                , range = spellRowRange
                                 , savingThrow = spellRowSavingThrow
                                 , spellLevel = SpellLevelList mempty
                                 , spellResist = spellRowResist
-                                , target = toEnum spellRowTarget
+                                , target = spellRowTarget
                                 }
-                                    where pack = Text.pack
 
 searchSpells :: (MonadIO m) => SpellSearch -> ReaderT SqlBackend m [Spell]
 searchSpells SpellSearch{ prefix } =
     (fmap . fmap) (fromSpellRow . entityVal) $
     select $
     from $ \sp -> do
-        let qPrefix = Text.unpack $ (fromMaybe "" prefix) <> "%"
+        let qPrefix = fromMaybe "" prefix <> "%"
         where_ (sp ^. SpellRowName `like` val qPrefix)
         return sp
 
