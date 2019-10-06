@@ -342,8 +342,7 @@ data Class = Bard
            | Rogue
            | Sorcerer
            | Wizard
-           | Other Text
-           deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON, ToJSONKey, FromJSONKey)
+           deriving (Eq, Enum, Ord, Show, Generic, ToJSON, FromJSON, ToJSONKey, FromJSONKey)
 
 data Target = Personal -- affects only yourself
             | Area

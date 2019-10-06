@@ -164,3 +164,7 @@ input[type=number]:not(.browswer-default).numberInput {
 div.cell>input:not([type]),input[type=text] {
     height: 1em;
 }
+
+select {
+    display: inline-block;
+}

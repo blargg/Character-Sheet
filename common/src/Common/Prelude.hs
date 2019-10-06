@@ -3,11 +3,13 @@ module Common.Prelude
     , decodeText
     , encodeText
     , showT
+    , fromMaybe
     ) where
 
 import Data.Text (Text)
 import qualified Data.Text as Text
 import Data.Aeson
+import Data.Maybe (fromMaybe)
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as TL
 

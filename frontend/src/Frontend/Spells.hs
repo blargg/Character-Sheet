@@ -14,6 +14,7 @@ module Frontend.Spells
 import Control.Monad (void)
 import Data.CharacterSheet
 import qualified Data.List as List
+import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Text (Text)
 import Reflex.Dom
@@ -34,6 +35,7 @@ spells_page :: forall t m.
                , PerformEvent t m
                , TriggerEvent t m
                , MonadHold t m
+               , MonadFix m
                )
                => m ()
 spells_page = do
@@ -47,10 +49,21 @@ spells_page = do
     spell_list_display displayedSpells
     return ()
 
-searchBox :: (DomBuilder t m) => m (Dynamic t SpellSearch)
+searchBox :: ( DomBuilder t m
+             , MonadFix m
+             , MonadHold t m
+             , PostBuild t m
+             ) => m (Dynamic t SpellSearch)
 searchBox = do
     search_text <- Mat.textInput "spell_search"
-    return (searchText <$> search_text)
+    let classes = Map.fromList ((\cl -> (Just cl, showT cl)) <$> enumAll)
+                  <> (Nothing =: "Select Class")
+                  :: Map (Maybe Class) Text
+    cl <- el "div" $ dropdown Nothing (pure classes) def
+    return $ SpellSearch <$> search_text <*> _dropdown_value cl
+
+enumAll :: (Enum e) => [e]
+enumAll = [toEnum 0 ..]
 
 -- POST a JSON request for a spell list
 spellRequest :: SpellSearch -> XhrRequest Text

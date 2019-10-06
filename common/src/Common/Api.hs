@@ -7,14 +7,16 @@ module Common.Api
 
 
 import Data.Aeson
+import Data.CharacterSheet
 import Data.Text (Text)
 import GHC.Generics
 
 
 -- defines the search criteria when searching for spells
-data SpellSearch = SpellSearch { prefix :: Maybe Text
+data SpellSearch = SpellSearch { prefix :: Text
+                               , searchClass :: Maybe Class
                                }
     deriving (Generic, ToJSON, FromJSON)
 
 searchText :: Text -> SpellSearch
-searchText p = SpellSearch (Just p)
+searchText p = SpellSearch p Nothing

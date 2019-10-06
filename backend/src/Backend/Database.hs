@@ -19,8 +19,6 @@ module Backend.Database
     ) where
 
 import Control.Monad.Reader
-import Data.Bits
-import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import Data.Text (Text)
 import Data.CharacterSheet hiding (name)
@@ -93,6 +91,6 @@ searchSpells SpellSearch{ prefix } =
     (fmap . fmap) (fromSpellRow . entityVal) $
     select $
     from $ \sp -> do
-        let qPrefix = fromMaybe "" prefix <> "%"
+        let qPrefix = prefix <> "%"
         where_ (sp ^. SpellRowName `like` val qPrefix)
         return sp
