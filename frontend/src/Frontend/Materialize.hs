@@ -7,6 +7,7 @@
 module Frontend.Materialize
     ( tabs
     , initTab
+    , progressIndeterminate
     , textInput
     ) where
 
@@ -88,3 +89,6 @@ textInput elId = E.divC "input-field" $ do
     return (value textValue)
         where
             elConf = inputElementConfig_elementConfig . elementConfig_initialAttributes
+
+progressIndeterminate :: (DomBuilder t m) => m ()
+progressIndeterminate = E.divC "progress" $ E.divC "indeterminate" $ return ()

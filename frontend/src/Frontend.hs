@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
@@ -7,7 +8,6 @@
 {-# LANGUAGE TypeApplications #-}
 module Frontend (frontend) where
 
-import Control.Monad (join)
 import Control.Monad.Fix
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -32,6 +32,7 @@ import qualified Frontend.Materialize as Mat
 import Obelisk.Route.Frontend
 import Obelisk.Generated.Static
 import Obelisk.Frontend
+import Language.Javascript.JSaddle
 
 frontend :: Frontend (R FrontendRoute)
 frontend = Frontend
@@ -45,7 +46,6 @@ body :: ( DomBuilder t m
         , SetRoute t (R FrontendRoute) m
         , RouteToUrl (R FrontendRoute) m
         , Prerender js t m
-        , PostBuild t m
         )
      => RoutedT t (R FrontendRoute) m ()
 body = subRoute_ $ \x -> do
@@ -84,21 +84,23 @@ header = do
     elAttr "meta" ("name" =: "viewport" <> "content" =: "width=device-width, initial-scale=1.0") $ return ()
 
 sheet_body :: ( DomBuilder t m
-              , MonadHold t m
-              , MonadFix m
               , Prerender js t m
-              , PostBuild t m
               )
               => m ()
-sheet_body = Mat.tabs "mainTab" $
+sheet_body =
+    prerender_ loading_page $
+    Mat.tabs "mainTab" $
     (1 :: Int) =: ("Stats", stat_page)
-    <> 2 =: ("Spells", prerender_ (text "loading") spells_page)
+    <> 2 =: ("Spells", spells_page)
 
-stat_page :: ( DomBuilder t m
-             , MonadHold t m
-             , MonadFix m
+-- displays before the page is fully loaded and rendered
+loading_page :: (DomBuilder t m) => m ()
+loading_page = do
+    el "h1" $ text "Loading"
+    Mat.progressIndeterminate
+
+stat_page :: ( AppWidget t m
              , Prerender js t m
-             , PostBuild t m
              )
              => m ()
 stat_page = do
@@ -116,10 +118,21 @@ stat_page = do
     return ()
     where flex = elClass "div" "flexContainer"
 
-characterName :: (DomBuilder t m, Prerender js t m) => m (Dynamic t Text)
-characterName = fmap join . el "h1" $
-    prerender
-        (text "Loading..." *> pure "")
+-- context of an app widget
+-- This runs in a prerendered context
+type AppWidget t m =
+    ( DomBuilder t m
+    , MonadFix m
+    , MonadHold t m
+    , TriggerEvent t m
+    , PostBuild t m
+    , PerformEvent t m
+    , MonadJSM m
+    , MonadJSM (Performable m)
+    )
+
+characterName :: AppWidget t m => m (Dynamic t Text)
+characterName = el "h1" $
         (stashValue K.Name $ \minit -> editSpan "characterName" (fromMaybe "Character Name" minit))
 
 abilityBlock :: ( DomBuilder t m
