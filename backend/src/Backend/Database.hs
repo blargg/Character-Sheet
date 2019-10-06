@@ -19,6 +19,9 @@ module Backend.Database
     ) where
 
 import Control.Monad.Reader
+import Data.Map as Map (Map)
+import qualified Data.Map as Map
+import qualified Data.Map.Strict as MapStrict
 import Data.Set (Set)
 import Data.Text (Text)
 import Data.CharacterSheet hiding (name)
@@ -91,11 +94,32 @@ fromSpellRow SpellRow { spellRowName
                                 , target = spellRowTarget
                                 }
 
+joinSpell :: SpellRow -> [SpellLevelRow] -> Spell
+joinSpell sp spLvls = (fromSpellRow sp){spellLevel = levels}
+    where levels = SpellLevelList (Map.fromList levelList)
+          levelList = mkTuple <$> spLvls
+          mkTuple sl = (spellLevelRowClassName sl, spellLevelRowSpellLevel sl)
+
+joinSpells :: [(Entity SpellRow, Entity SpellLevelRow)] -> [Spell]
+joinSpells list = fmap snd . Map.toList $ Map.intersectionWith joinSpell srById lvlById
+    where srById = Map.fromList $ fmap (\(sr, _) -> (entityKey sr, entityVal sr)) list
+          lvlById = totalFreq $ fmap (\(_, sl) -> (spellLevelRowSpellId . entityVal $ sl, [entityVal sl])) list
+
+-- counts occurences of a with weighted frequency b
+totalFreq :: (Ord a, Monoid b) => [(a, b)] -> Map a b
+totalFreq list = foldl insertPair Map.empty list
+    where insertPair m (key, value) = MapStrict.insertWith (<>) key value m
+
+-- searchSpells :: (MonadIO m) => SpellSearch -> ReaderT SqlBackend m [(Entity SpellRow, Entity SpellLevelRow)]
 searchSpells :: (MonadIO m) => SpellSearch -> ReaderT SqlBackend m [Spell]
-searchSpells SpellSearch{ prefix } =
-    (fmap . fmap) (fromSpellRow . entityVal) $
+searchSpells SpellSearch{ prefix, searchClass } =
+    fmap joinSpells $
     select $
-    from $ \sp -> do
+    from $ \(sp `InnerJoin` spLvl) -> do
+        on (sp ^. SpellRowId ==. spLvl ^. SpellLevelRowSpellId)
         let qPrefix = prefix <> "%"
         where_ (sp ^. SpellRowName `like` val qPrefix)
-        return sp
+        case searchClass of
+          Just cl -> where_ (spLvl ^. SpellLevelRowClassName ==. val cl)
+          Nothing -> return ()
+        return (sp, spLvl)
