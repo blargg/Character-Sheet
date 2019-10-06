@@ -57,11 +57,15 @@ echoHandler = do
 spellListHandler :: ReaderT SqlBackend Snap ()
 spellListHandler = do
     rb <- readRequestBody 2048
-    let m_search = Aeson.decode rb :: Maybe SpellSearch
-        search = fromMaybe (SpellSearch { prefix = Just "" }) m_search
-    sps <- searchSpells search
-    liftIO . putStrLn $ "spells retrieved: " ++ show (length sps)
-    writeLBS . Aeson.encode $ sps
+    case Aeson.decode rb :: Maybe SpellSearch of
+      Just search -> do
+          sps <- searchSpells search
+          liftIO . putStrLn $ "spells retrieved: " ++ show (length sps)
+          writeLBS . Aeson.encode $ sps
+      Nothing -> lift $ do
+          modifyResponse $ setResponseStatus 500 "Internal Server Error"
+          writeBS "500 error"
+          finishWith =<< getResponse
 
 -- example list of spells for initial testing
 exampleSpells :: [Spell]
