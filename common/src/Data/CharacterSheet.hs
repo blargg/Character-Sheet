@@ -42,6 +42,7 @@ module Data.CharacterSheet
     , nmd
     , pathfinderSkills
     , fmtComps
+    , toList
     , shortName
     , showPercentage
     , skillBonus
@@ -326,10 +327,13 @@ data School = Abjuration
 
 -- spell level. This is distinct from character level.
 newtype SpellLevel = SpellLevel Int
-    deriving (Eq, Generic, ToJSON, FromJSON)
+    deriving (Eq, Generic, ToJSON, FromJSON, Show)
 
-data SpellLevelList = SpellLevelList (Map Class SpellLevel)
+newtype SpellLevelList = SpellLevelList {toMap :: Map Class SpellLevel}
     deriving (Generic, ToJSON, FromJSON)
+
+toList :: SpellLevelList -> [(Class, SpellLevel)]
+toList = M.toList . toMap
 
 data Class = Bard
            | Barbarian
@@ -342,7 +346,7 @@ data Class = Bard
            | Rogue
            | Sorcerer
            | Wizard
-           deriving (Eq, Enum, Ord, Show, Generic, ToJSON, FromJSON, ToJSONKey, FromJSONKey)
+           deriving (Eq, Enum, Ord, Show, Read, Generic, ToJSON, FromJSON, ToJSONKey, FromJSONKey)
 
 data Target = Personal -- affects only yourself
             | Area
@@ -438,4 +442,20 @@ instance PersistField Target where
     fromPersistValue _ = Left "PersistField.SavingThrow.fromPersistValue called on wrong data type"
 
 instance PersistFieldSql Target where
+    sqlType _ = SqlInt32
+
+instance PersistField Class where
+    toPersistValue = PersistText . T.pack . show
+    fromPersistValue (PersistText x) = Right . read . T.unpack $ x
+    fromPersistValue _ = Left "PersistField.Class.fromPersistValue called on wrong data type"
+
+instance PersistFieldSql Class where
+    sqlType _ = SqlString
+
+instance PersistField SpellLevel where
+    toPersistValue (SpellLevel x) = PersistInt64 . fromIntegral $ x
+    fromPersistValue (PersistInt64 x) = Right . SpellLevel . fromIntegral $ x
+    fromPersistValue _ = Left "PersistField.SpellLevel.fromPersistValue called on wrong data type"
+
+instance PersistFieldSql SpellLevel where
     sqlType _ = SqlInt32

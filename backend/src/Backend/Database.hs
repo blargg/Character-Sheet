@@ -41,16 +41,21 @@ SpellRow
     deriving Show
 SpellLevelRow
     spellId SpellRowId
-    className Text
-    spellLevel Int
+    className Class
+    spellLevel SpellLevel
     deriving Show
 |]
 
 createDatabase :: (MonadIO m) => [Spell] -> ReaderT SqlBackend m ()
 createDatabase spells = do
     runMigration migrateAll
-    mapM_ (insert . toSpellRow) spells
+    mapM_ insertSpell spells
     return ()
+
+insertSpell :: (MonadIO m) => Spell -> ReaderT SqlBackend m ()
+insertSpell sp@Spell{spellLevel = spellLevel} = do
+    spellId <- insert $ toSpellRow sp
+    mapM_ insert $ (\(c, l) -> SpellLevelRow spellId c l) <$> toList spellLevel
 
 toSpellRow :: Spell -> SpellRow
 toSpellRow Spell{..} = SpellRow { spellRowName = spellName
