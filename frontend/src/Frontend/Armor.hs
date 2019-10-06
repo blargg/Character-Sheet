@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -20,14 +21,11 @@ import Frontend.Storage hiding (StorageKey(..))
 import qualified Frontend.Storage as K
 import Reflex.Dom
 
-armorBlock :: ( DomBuilder t m
-              , MonadHold t m
-              , MonadFix m
-              , PostBuild t m
-              , Prerender js t m
-              )
+import Frontend.Prelude
+
+armorBlock :: AppWidget t m
               => Dynamic t (Abilities Int) -> m (Dynamic t [Armor Int])
-armorBlock abl = prerenderStash K.Armor (armorBlock' abl)
+armorBlock abl = stashValue K.Armor (armorBlock' abl)
 
 collapseSection :: ( DomBuilder t m
                    , PostBuild t m

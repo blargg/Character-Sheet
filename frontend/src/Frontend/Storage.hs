@@ -5,7 +5,6 @@
 module Frontend.Storage
     ( StorageKey(..)
     , loadJson
-    , prerenderStash
     , saveDyn
     , saveLocal
     , stashValue
@@ -53,22 +52,6 @@ saveDyn key dynVal = do
     debouncedValues <- debounce 2 $ updated dynVal
     let serializedValues = encodeText <$> debouncedValues
     performEvent_ (liftJSM . saveLocal key <$> serializedValues)
-
--- Constraints that both parts of the widget must satisfy
-type StashWidget t m = ( DomBuilder t m
-                       , MonadFix m
-                       , MonadHold t m
-                       , PostBuild t m
-                       )
-prerenderStash :: ( FromJSON a
-                  , ToJSON a
-                  , StashWidget t m
-                  , Prerender js t m
-                  )
-                  => StorageKey
-                  -> (forall m'. StashWidget t m' => Maybe a -> m' (Dynamic t a))
-                  -> m (Dynamic t a)
-prerenderStash key mkWidget = fmap join $ prerender (mkWidget Nothing) (stashValue key mkWidget)
 
 stashValue :: ( FromJSON a
               , ToJSON a

@@ -1,4 +1,3 @@
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
@@ -29,10 +28,10 @@ import qualified Frontend.About as About
 import qualified Frontend.Elements as E
 import qualified Frontend.Materialize as Mat
 
+import Frontend.Prelude
 import Obelisk.Route.Frontend
 import Obelisk.Generated.Static
 import Obelisk.Frontend
-import Language.Javascript.JSaddle
 
 frontend :: Frontend (R FrontendRoute)
 frontend = Frontend
@@ -99,10 +98,7 @@ loading_page = do
     el "h1" $ text "Loading"
     Mat.progressIndeterminate
 
-stat_page :: ( AppWidget t m
-             , Prerender js t m
-             )
-             => m ()
+stat_page :: (AppWidget t m) => m ()
 stat_page = do
     _ <- characterName
     rec abl <- flex $ do
@@ -118,31 +114,13 @@ stat_page = do
     return ()
     where flex = elClass "div" "flexContainer"
 
--- context of an app widget
--- This runs in a prerendered context
-type AppWidget t m =
-    ( DomBuilder t m
-    , MonadFix m
-    , MonadHold t m
-    , TriggerEvent t m
-    , PostBuild t m
-    , PerformEvent t m
-    , MonadJSM m
-    , MonadJSM (Performable m)
-    )
-
 characterName :: AppWidget t m => m (Dynamic t Text)
 characterName = el "h1" $
         (stashValue K.Name $ \minit -> editSpan "characterName" (fromMaybe "Character Name" minit))
 
-abilityBlock :: ( DomBuilder t m
-                , MonadHold t m
-                , MonadFix m
-                , PostBuild t m
-                , Prerender js t m
-                )
+abilityBlock :: AppWidget t m
                 => m (Dynamic t (Abilities Int))
-abilityBlock = prerenderStash K.Abilities abilityBlock'
+abilityBlock = stashValue K.Abilities abilityBlock'
 
 abilityBlock' :: ( DomBuilder t m
                  , PostBuild t m
@@ -168,14 +146,9 @@ abilityDisplay initialValue nm = row $ do
     cellClass "number" $ display (abilityMod <$> abilityScore)
     return abilityScore
 
-classBlock :: ( DomBuilder t m
-              , MonadFix m
-              , MonadHold t m
-              , PostBuild t m
-              , Prerender js t m
-              )
+classBlock :: AppWidget t m
            => m (Dynamic t (ClassData Int))
-classBlock = prerenderStash K.Class classBlock'
+classBlock = stashValue K.Class classBlock'
 
 classBlock' :: ( DomBuilder t m)
             => Maybe (ClassData Int) -> m (Dynamic t (ClassData Int))
@@ -197,13 +170,8 @@ classBlock' minit = statBlock "Class" . grid $ do
     where numDefZero initVal = fromMaybe 0 <$$> numberInput initVal
 
 -- displays current total health, temp hp, wounds, remaining health
-healthBlock :: ( DomBuilder t m
-               , MonadFix m
-               , MonadHold t m
-               , PostBuild t m
-               , Prerender js t m
-               ) => Dynamic t (Abilities Int) -> Dynamic t (ClassData Int) -> m ()
-healthBlock abl cls = () <$ prerenderStash K.Health (healthBlock' abl cls)
+healthBlock :: AppWidget t m => Dynamic t (Abilities Int) -> Dynamic t (ClassData Int) -> m ()
+healthBlock abl cls = () <$ stashValue K.Health (healthBlock' abl cls)
 
 healthBlock' :: ( DomBuilder t m
                 , PostBuild t m
@@ -236,14 +204,9 @@ combatManuverBlock abl cls = statBlock "Combat Mnvr" . grid $ do
           absMod = abilityMod <$$> abl
           cellNum = cellClass "number"
 
-initiativeBlock :: ( DomBuilder t m
-                   , MonadFix m
-                   , PostBuild t m
-                   , MonadHold t m
-                   , Prerender js t m
-                   )
+initiativeBlock :: AppWidget t m
                    => Dynamic t (Abilities Int) -> m ()
-initiativeBlock abl = () <$ prerenderStash K.Initiative (initiativeBlock' abl)
+initiativeBlock abl = () <$ stashValue K.Initiative (initiativeBlock' abl)
 
 initiativeBlock' :: ( DomBuilder t m
                     , MonadFix m
@@ -260,13 +223,8 @@ initiativeBlock' abl mbonus = statBlock "Initiative" . grid $ mdo
         cell $ fromMaybe 0 <$$> numberInput (fromMaybe 0 mbonus)
     return bonus
 
-attacksBlock :: ( DomBuilder t m
-                , MonadHold t m
-                , PostBuild t m
-                , MonadFix m
-                , Prerender js t m
-                ) => m ()
-attacksBlock = () <$ prerenderStash K.Attacks attacksBlock'
+attacksBlock :: AppWidget t m => m ()
+attacksBlock = () <$ stashValue K.Attacks attacksBlock'
 
 attacksBlock' :: (DomBuilder t m) => Maybe Attack -> m (Dynamic t Attack)
 attacksBlock' initAttacks = statBlock "Attacks" . grid $ do
@@ -285,14 +243,9 @@ attacksBlock' initAttacks = statBlock "Attacks" . grid $ do
     return $ nmd <$> value nameEl <*> dStats
         where blankAttack = nmd "" (AttackStats 0 (d 6) 0)
 
-skillsBlock :: ( DomBuilder t m
-               , MonadFix m
-               , MonadHold t m
-               , PostBuild t m
-               , Prerender js t m
-               )
+skillsBlock :: AppWidget t m
                => Dynamic t (Abilities Int) -> M.Map Text Ability -> m (Dynamic t (M.Map Text Skill))
-skillsBlock  abl statsConfg = prerenderStash K.Skill (skillsBlock' abl statsConfg)
+skillsBlock  abl statsConfg = stashValue K.Skill (skillsBlock' abl statsConfg)
 
 skillsBlock' :: ( DomBuilder t m
                 , PostBuild t m
