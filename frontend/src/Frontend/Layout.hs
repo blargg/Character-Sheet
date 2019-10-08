@@ -30,10 +30,10 @@ cellClass :: (DomBuilder t m) => Text -> m a -> m a
 cellClass cl = elClass "div" ("cell " `mappend` cl)
 
 labelCell :: (DomBuilder t m) => Text -> m ()
-labelCell = cellClass "label" . text
+labelCell = cellClass "lbl" . text
 
 lbl' :: (DomBuilder t m) => Text -> m ()
-lbl' = E.spanC "label" . text
+lbl' = E.spanC "lbl" . text
 
 statBlock :: (DomBuilder t m) => Text -> m a -> m a
 statBlock title = statBlock' (text title) . const

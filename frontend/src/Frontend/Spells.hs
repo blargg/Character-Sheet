@@ -19,8 +19,8 @@ import qualified Data.Map as Map
 import Data.Text (Text)
 import Reflex.Dom
 
+import qualified Frontend.Bulma as Bulma
 import qualified Frontend.Elements as E
-import qualified Frontend.Materialize as Mat
 import Frontend.Layout
 import Frontend.Prelude
 import Common.Api
@@ -55,11 +55,11 @@ searchBox :: ( DomBuilder t m
              , PostBuild t m
              ) => m (Dynamic t SpellSearch)
 searchBox = do
-    search_text <- Mat.textInput "spell_search"
+    search_text <- Bulma.textInput "Search"
     let classes = Map.fromList ((\cl -> (Just cl, showT cl)) <$> enumAll)
                   <> (Nothing =: "Select Class")
                   :: Map (Maybe Class) Text
-    cl <- el "div" $ dropdown Nothing (pure classes) def
+    cl <- elClass "div" "select" $ dropdown Nothing (pure classes) def
     return $ SpellSearch <$> search_text <*> _dropdown_value cl
 
 enumAll :: (Enum e) => [e]
@@ -78,8 +78,8 @@ spell_list_display spells = void . dyn $ do
        else void <$> (mapM_ spell_display <$> spells)
 
 spell_display :: (DomBuilder t m) => Spell -> m ()
-spell_display Spell{..} = do
-    el "h4" . text $ spellName
+spell_display Spell{..} = E.divC "card" $ do
+    Bulma.title 3 spellName
     E.div . text $ description
     E.div . spell_levels $ spellLevel
     E.divC "row" $ do

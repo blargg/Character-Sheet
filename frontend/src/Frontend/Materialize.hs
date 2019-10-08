@@ -29,10 +29,9 @@ tabs :: ( MonadFix m
         , MonadHold t m
         , PostBuild t m
         , Ord k)
-  => Text               -- ^ id for the <ul> element
-  -> Map k (Text, m ()) -- ^ Map from (arbitrary) key to (tab label, child widget)
+  => Map k (Text, m ()) -- ^ Map from (arbitrary) key to (tab label, child widget)
   -> m ()
-tabs elId elems = tabDisplayFull "tabs" elId ("tab col s3 red black-text lighten-5", "tab col s3") ("", "") elems
+tabs elems = tabDisplayFull "tabs is-large" ("is-active", "") ("", "") elems
 
 initTab :: Text -> JSM ()
 initTab elId = do
@@ -51,15 +50,14 @@ initTab elId = do
 --   Creates a header bar containing a <ul> with one <li> per child; clicking a <li> displays
 --   the corresponding child and hides all others.
 tabDisplayFull :: forall t m k. (MonadFix m, DomBuilder t m, MonadHold t m, PostBuild t m, Ord k)
-  => Text               -- ^ Class applied to <ul> element
-  -> Text               -- ^ id for the <ul> element
+  => Text               -- ^ Class applied to <div> element around the <ul>
   -> (Text, Text)       -- ^ Class applied to currently (active, inactive) <li> element
   -> (Text, Text)       -- ^ Classes applied to (active, inactive) links
   -> Map k (Text, m ()) -- ^ Map from (arbitrary) key to (tab label, child widget)
   -> m ()
-tabDisplayFull ulClass ulId (activeClass, inactive) (linkActive, _) tabItems = do
+tabDisplayFull divCl (activeClass, inactive) (linkActive, _) tabItems = do
   let t0 = listToMaybe $ Map.keys tabItems
-  rec currentTab :: Demux t (Maybe k) <- elAttr "ul" ("class" =: ulClass <> "id" =: ulId) $ do
+  rec currentTab :: Demux t (Maybe k) <- elClass "div" divCl $ el "ul" $ do
         tabClicksList :: [Event t k] <- Map.elems <$> imapM (\k (s,_) -> headerBarLink s k $ demuxed currentTab (Just k)) tabItems
         let eTabClicks :: Event t k = leftmost tabClicksList
         fmap demux $ holdDyn t0 $ fmap Just eTabClicks

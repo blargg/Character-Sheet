@@ -3,18 +3,19 @@
 module Frontend.About (main) where
 
 import Reflex.Dom
+import Frontend.Bulma
 import qualified Frontend.Elements as EL
 
 main :: DomBuilder t m => m ()
 main = do
-    el "h1" $ text "About"
+    title 1 "About"
     el "p" $ text "GitHub: " >> EL.urlLink projectURL "project page"
-    el "h2" $ text "Caution"
+    title 2 "Caution"
     el "p" $ text "This website is still experimental, and provided as is. \
         \This is will not hold onto a character sheet long term, \
         \and data will get lost when the site updates or when you clear your browsing data. \
         \Please copy down anything that you will need later."
-    el "h2" $ text "Helping Out"
+    title 2 "Helping Out"
     el "p" $ do
         text "If you like this project, consider contributing "
         EL.urlLink projectURL "code changes"

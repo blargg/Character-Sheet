@@ -27,6 +27,7 @@ library
   other-modules:
     Frontend.About
     Frontend.Armor
+    Frontend.Bulma
     Frontend.Elements
     Frontend.Materialize
     Frontend.Prelude

@@ -27,6 +27,7 @@ import qualified Frontend.Storage as K
 import qualified Frontend.About as About
 import qualified Frontend.Elements as E
 import qualified Frontend.Materialize as Mat
+import qualified Frontend.Bulma as Bulma
 
 import Frontend.Prelude
 import Obelisk.Route.Frontend
@@ -61,7 +62,7 @@ navigation currentRoute content = do
     E.divC "topnav" $ do
         navItem' FrontendRoute_Main
         navItem' FrontendRoute_About
-    E.divC "main" content
+    E.divC "section" content
         where navItem' route = navItem (samePage currentRoute route) route
 
 navItem :: ( DomBuilder t m
@@ -75,8 +76,7 @@ navItem selected linkTo = E.divC cl $ routeLink (linkTo :/ ()) $ text (pageName 
 header :: (DomBuilder t m) => m ()
 header = do
     el "title" $ text "Character Sheet"
-    elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", static @"materialize/css/materialize.min.css")]) $ return ()
-    elAttr "script" (M.fromList [("type", "text/javascript"), ("src", static @"materialize/js/materialize.min.js")]) $ return ()
+    elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", static @"bulma/bulma.min.css")]) $ return ()
     elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", static @"css/Style.css")]) $ return ()
     elAttr "link" (M.fromList [("rel", "shortcut icon"), ("href", static @"image/page_icon.png")]) $ return ()
     elAttr "link" (M.fromList [("rel", "stylesheet"), ("href", "https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono")]) $ return ()
@@ -88,14 +88,14 @@ sheet_body :: ( DomBuilder t m
               => m ()
 sheet_body =
     prerender_ loading_page $
-    Mat.tabs "mainTab" $
+    Mat.tabs $
     (1 :: Int) =: ("Stats", stat_page)
     <> 2 =: ("Spells", spells_page)
 
 -- displays before the page is fully loaded and rendered
 loading_page :: (DomBuilder t m) => m ()
 loading_page = do
-    el "h1" $ text "Loading"
+    Bulma.title 1 "Loading"
     Mat.progressIndeterminate
 
 stat_page :: (AppWidget t m) => m ()
@@ -143,7 +143,7 @@ abilityDisplay :: ( DomBuilder t m
 abilityDisplay initialValue nm = row $ do
     cell $ text nm
     abilityScore <- cell $ fromMaybe 10 <$$> numberInput initialValue
-    cellClass "number" $ display (abilityMod <$> abilityScore)
+    cellClass "num" $ display (abilityMod <$> abilityScore)
     return abilityScore
 
 classBlock :: AppWidget t m
@@ -185,7 +185,7 @@ healthBlock' abl cls minit = statBlock "Health" . grid $ do
         wnds <- cell $ fromMaybe 0 <$$> numberInput initialWounds
         cellNum $ display ((-) <$> hp <*> wnds)
         return wnds
-    where cellNum = cellClass "number"
+    where cellNum = cellClass "num"
 
 combatManuverBlock :: ( DomBuilder t m
                       , PostBuild t m
@@ -202,7 +202,7 @@ combatManuverBlock abl cls = statBlock "Combat Mnvr" . grid $ do
           cmb = fst <$> combatStats
           cmd = snd <$> combatStats
           absMod = abilityMod <$$> abl
-          cellNum = cellClass "number"
+          cellNum = cellClass "num"
 
 initiativeBlock :: AppWidget t m
                    => Dynamic t (Abilities Int) -> m ()
@@ -219,7 +219,7 @@ initiativeBlock' abl mbonus = statBlock "Initiative" . grid $ mdo
     let total = initiative' <$> abl <*> bonus
     row $ lbl "total" >> lbl "bonus"
     bonus <- row $ do
-        cellClass "number" $ E.span (display total)
+        cellClass "num" $ E.span (display total)
         cell $ fromMaybe 0 <$$> numberInput (fromMaybe 0 mbonus)
     return bonus
 
@@ -270,11 +270,11 @@ skillLine abls initSkillMap skillTitle abl = row $ do
     let initSkill = fromMaybe blankSkill (M.lookup skillTitle initSkillMap)
     ct skillTitle
     ct . shortName $ abl
-    classCB <- cell . el "label" $ checkbox (isClassSkill initSkill) def <* E.span (text "")
+    classCB <- cell . el "lbl" $ checkbox (isClassSkill initSkill) def <* E.span (text "")
     ranks <- cell $ fromMaybe 0 <$$> numberInput (skillRanks initSkill)
     miscMod <- cell $ fromMaybe 0 <$$> numberInput (skillMod initSkill)
     let sk = Skill <$> pure skillTitle <*> value classCB <*> pure abl <*> ranks <*> miscMod
-    cellClass "number" $ display (skillBonus <$> abls <*> sk)
+    cellClass "num" $ display (skillBonus <$> abls <*> sk)
     return sk
 
 ct :: (DomBuilder t m) => Text -> m ()

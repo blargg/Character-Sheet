@@ -14,8 +14,12 @@ div.main {
 input {
     font-family: 'Roboto', sans-serif;
     height: 15px; /* TODO should calculate the height */
-    border: 0px;
-    background-color: rgba(256, 256, 256, 0.85);
+    border-width: 0 0 1px 0;
+    border-color: rgba(0, 0, 0, 0.25);
+}
+
+input::focus {
+    border-color: rgba(0, 0, 0, 1);
 }
 
 .delete-button {
@@ -67,7 +71,7 @@ div.nav-item>a {
 .numberInput {
     width: 2em;
 }
-.number {
+.num {
     font-family: 'Roboto Mono', monospace;
     text-align: right;
 }
@@ -101,11 +105,11 @@ div.nav-item>a {
 }
 
 /* Consider making this another class for maintenance */
-.cell.label {
+.cell.lbl {
     text-align: center;
 }
 
-.label {
+.lbl {
     font-size: 0.75em;
     color: #444;
 }
@@ -153,18 +157,4 @@ button {
 
 button:hover {
     background-color: gray;
-}
-
-/* Fixing materialize styles */
-input[type=number]:not(.browswer-default).numberInput {
-    width: 2em;
-    height: 1em;
-}
-
-div.cell>input:not([type]),input[type=text] {
-    height: 1em;
-}
-
-select {
-    display: inline-block;
 }
