@@ -40,8 +40,8 @@ module Data.CharacterSheet
     , highestFaceValue
     , initiative'
     , nmd
-    , pathfinderSkills
     , fmtComps
+    , pathfinderSkills
     , toList
     , shortName
     , showPercentage
@@ -300,7 +300,7 @@ fmtComps scs = mconcat $ List.intersperse ", " $ fmap fmt $ Set.toList scs
 data GameDuration = FreeAction
                   | StandardAction
                   | FullRound
-    deriving (Generic, ToJSON, FromJSON, Enum, Show)
+    deriving (Eq, Ord, Generic, ToJSON, FromJSON, Enum, Show)
 
 instance Fmt GameDuration where
     fmt FreeAction = "Free Action"
@@ -308,7 +308,7 @@ instance Fmt GameDuration where
     fmt FullRound = "Full Round"
 
 data SavingThrow = Fort | Ref | Will | None
-    deriving (Generic, ToJSON, FromJSON, Enum, Show)
+    deriving (Eq, Ord, Generic, ToJSON, FromJSON, Enum, Show)
 
 instance Fmt SavingThrow where
     fmt Fort = "Fortitude"
@@ -330,7 +330,7 @@ newtype SpellLevel = SpellLevel Int
     deriving (Eq, Ord, Generic, ToJSON, FromJSON, Show)
 
 newtype SpellLevelList = SpellLevelList {toMap :: Map Class SpellLevel}
-    deriving (Generic, ToJSON, FromJSON)
+    deriving (Eq, Ord, Generic, ToJSON, FromJSON)
 
 toList :: SpellLevelList -> [(Class, SpellLevel)]
 toList = M.toList . toMap
@@ -351,7 +351,7 @@ data Class = Bard
 data Target = Personal -- affects only yourself
             | Area
             | Creature
-    deriving (Generic, ToJSON, FromJSON, Enum, Show)
+    deriving (Eq, Ord, Generic, ToJSON, FromJSON, Enum, Show)
 
 instance Fmt Target where
     fmt Personal = "Personal"
@@ -371,7 +371,7 @@ data Spell = Spell
     , spellResist :: Bool
     , target :: Target
     }
-    deriving (Generic, ToJSON, FromJSON)
+    deriving (Eq, Ord, Generic, ToJSON, FromJSON)
 
 pathfinderSkills :: Map Text Ability
 pathfinderSkills = M.fromList [ ("Acrobatics", Dexterity)

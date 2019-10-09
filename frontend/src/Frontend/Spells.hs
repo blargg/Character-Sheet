@@ -11,7 +11,7 @@ module Frontend.Spells
     ( spells_page
     ) where
 
-import Control.Monad (void)
+import Control.Monad (join, void)
 import Data.CharacterSheet
 import qualified Data.List as List
 import Data.Map (Map)
@@ -39,7 +39,23 @@ spells_page :: forall t m.
                , MonadFix m
                )
                => m ()
-spells_page = do
+spells_page = E.divC "columns" $ mdo
+    E.divC "column" $ prepared_spells prepEv
+    prepEv <- E.divC "column" spell_book
+    return ()
+
+spell_book :: forall t m.
+              ( DomBuilder t m
+              , PostBuild t m
+              , MonadJSM (Performable m)
+              , HasJSContext (Performable m)
+              , PerformEvent t m
+              , TriggerEvent t m
+              , MonadHold t m
+              , MonadFix m
+              )
+              => m (Event t Spell)
+spell_book = do
     search <- searchBox
     pb <- getPostBuild
     let initialLoad = spellRequest (searchText "") <$ pb
@@ -48,7 +64,37 @@ spells_page = do
     spellLoad <- fmapMaybe decodeXhrResponse <$> performRequestAsync spellLoadReqEvents :: m (Event t [Spell])
     displayedSpells <- holdDyn [] spellLoad
     spell_list_display displayedSpells
+
+prepared_spells :: forall t m.
+                   ( DomBuilder t m
+                   , MonadFix m
+                   , MonadHold t m
+                   , PostBuild t m
+                   ) => Event t Spell -> m ()
+prepared_spells prepareSpell = mdo
+    let inserts = addCount <$> prepareSpell
+    let removes = removeCount <$> castEv
+    let updates = leftmost [inserts, removes] :: Event t (Map Spell Int -> Map Spell Int)
+    spell_set <- foldDyn ($) Map.empty updates
+    castEvs <- dyn $ fmap (mapM (uncurry prepedSpell) . Map.toList) spell_set :: m (Event t [Event t Spell])
+    castEv <- switchHold never $ fmap leftmost castEvs :: m (Event t Spell)
     return ()
+
+addCount :: (Ord a) => a -> Map a Int -> Map a Int
+addCount key m = Map.insertWith (+) key 1 m
+
+removeCount :: (Ord a) => a -> Map a Int -> Map a Int
+removeCount key m = Map.update f key m
+    where f x | x <= 1 = Nothing
+              | otherwise = Just (x-1)
+
+prepedSpell :: (DomBuilder t m) => Spell -> Int -> m (Event t Spell)
+prepedSpell sp remaining = do
+    castEv <- E.div $ do
+        text $ "remaining: " <> showT remaining
+        button "Cast"
+    E.div $ spell_display sp
+    return $ sp <$ castEv
 
 searchBox :: ( DomBuilder t m
              , MonadFix m
@@ -81,13 +127,24 @@ enumAll = [toEnum 0 ..]
 spellRequest :: SpellSearch -> XhrRequest Text
 spellRequest s = postJson "api/spelllist" s
 
-spell_list_display :: ( DomBuilder t m
-                      , PostBuild t m) => Dynamic t [Spell] -> m ()
-spell_list_display spells = void . dyn $ do
-    ss <- spells
-    if List.null ss
-       then pure $ text "no spells to display"
-       else void <$> (mapM_ spell_display <$> spells)
+spell_list_display :: forall t m.
+                      ( DomBuilder t m
+                      , PostBuild t m
+                      , MonadHold t m
+                      ) => Dynamic t [Spell] -> m (Event t Spell)
+spell_list_display spells = do
+    updatingPrepEv <- dyn $ do
+        ss <- spells
+        return $ if List.null ss
+           then text "no spells to display" *> return never
+           else leftmost <$> (mapM spellbook_spell ss)
+    switchHold never updatingPrepEv
+
+spellbook_spell :: (DomBuilder t m) => Spell -> m (Event t Spell)
+spellbook_spell sp = do
+    prep <- E.div $ button "prepare"
+    spell_display sp
+    return $ sp <$ prep
 
 spell_display :: (DomBuilder t m) => Spell -> m ()
 spell_display Spell{..} = E.divC "card" $ do
