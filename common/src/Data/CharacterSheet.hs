@@ -327,7 +327,7 @@ data School = Abjuration
 
 -- spell level. This is distinct from character level.
 newtype SpellLevel = SpellLevel Int
-    deriving (Eq, Generic, ToJSON, FromJSON, Show)
+    deriving (Eq, Ord, Generic, ToJSON, FromJSON, Show)
 
 newtype SpellLevelList = SpellLevelList {toMap :: Map Class SpellLevel}
     deriving (Generic, ToJSON, FromJSON)

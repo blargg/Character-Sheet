@@ -15,8 +15,10 @@ import GHC.Generics
 -- defines the search criteria when searching for spells
 data SpellSearch = SpellSearch { prefix :: Text
                                , searchClass :: Maybe Class
+                               , minLevel :: Maybe SpellLevel
+                               , maxLevel :: Maybe SpellLevel
                                }
     deriving (Generic, ToJSON, FromJSON)
 
 searchText :: Text -> SpellSearch
-searchText p = SpellSearch p Nothing
+searchText p = SpellSearch p Nothing Nothing Nothing

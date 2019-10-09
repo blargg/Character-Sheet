@@ -21,6 +21,7 @@ import Reflex.Dom
 
 import qualified Frontend.Bulma as Bulma
 import qualified Frontend.Elements as E
+import Frontend.Input
 import Frontend.Layout
 import Frontend.Prelude
 import Common.Api
@@ -60,7 +61,18 @@ searchBox = do
                   <> (Nothing =: "Select Class")
                   :: Map (Maybe Class) Text
     cl <- elClass "div" "select" $ dropdown Nothing (pure classes) def
-    return $ SpellSearch <$> search_text <*> _dropdown_value cl
+    (minLevel, maxLevel) <- E.div $ do
+        lbl' "min level"
+        minL <- numberInput' Nothing
+        space'
+        lbl' "max level"
+        maxL <- numberInput' Nothing
+        return (minL, maxL)
+    return $ SpellSearch
+        <$> search_text
+        <*> _dropdown_value cl
+        <*> (fmap . fmap) SpellLevel minLevel
+        <*> (fmap . fmap) SpellLevel maxLevel
 
 enumAll :: (Enum e) => [e]
 enumAll = [toEnum 0 ..]
