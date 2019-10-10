@@ -62,7 +62,7 @@ navigation currentRoute content = do
     E.divC "topnav" $ do
         navItem' FrontendRoute_Main
         navItem' FrontendRoute_About
-    E.divC "section" content
+    elClass "section" "section" $ E.divC "container" content
         where navItem' route = navItem (samePage currentRoute route) route
 
 navItem :: ( DomBuilder t m
