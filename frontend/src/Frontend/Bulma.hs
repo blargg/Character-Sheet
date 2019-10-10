@@ -5,7 +5,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 module Frontend.Bulma
-    ( textInput
+    ( indeterminateProgress
+    , textInput
     , title
     , subtitle
     ) where
@@ -34,3 +35,6 @@ title level s = elClass ("h" <> l) ("title is-" <> l) $ text s
 subtitle :: (DomBuilder t m) => Int -> Text -> m ()
 subtitle level s = elClass ("h" <> l) ("subtitle is-" <> l) $ text s
     where l = Text.pack (show level)
+
+indeterminateProgress :: (DomBuilder t m) => m ()
+indeterminateProgress = elAttr "progress" ("class" =:"progress is-small is-primary" <> "max" =: "100") $ text "10%"

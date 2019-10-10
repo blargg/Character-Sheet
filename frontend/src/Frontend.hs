@@ -96,7 +96,7 @@ sheet_body =
 loading_page :: (DomBuilder t m) => m ()
 loading_page = do
     Bulma.title 1 "Loading"
-    Mat.progressIndeterminate
+    Bulma.indeterminateProgress
 
 stat_page :: (AppWidget t m) => m ()
 stat_page = do
