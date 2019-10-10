@@ -52,18 +52,17 @@ tabs :: ( MonadFix m
         , Ord k)
   => Map k (Text, m ()) -- ^ Map from (arbitrary) key to (tab label, child widget)
   -> m ()
-tabs elems = tabDisplayFull "tabs is-large" ("is-active", "") ("", "") elems
+tabs elems = tabDisplayFull "tabs is-large" "is-active" elems
 
 -- | Like tab display, with additional options. A widget to construct a tabbed view that shows only one of its child widgets at a time.
 --   Creates a header bar containing a <ul> with one <li> per child; clicking a <li> displays
 --   the corresponding child and hides all others.
 tabDisplayFull :: forall t m k. (MonadFix m, DomBuilder t m, MonadHold t m, PostBuild t m, Ord k)
   => Text               -- ^ Class applied to <div> element around the <ul>
-  -> (Text, Text)       -- ^ Class applied to currently (active, inactive) <li> element
-  -> (Text, Text)       -- ^ Classes applied to (active, inactive) links
+  -> Text       -- ^ Class applied to currently (active, inactive) <li> element
   -> Map k (Text, m ()) -- ^ Map from (arbitrary) key to (tab label, child widget)
   -> m ()
-tabDisplayFull divCl (activeClass, inactive) (linkActive, _) tabItems = do
+tabDisplayFull divCl activeClass tabItems = do
   let t0 = listToMaybe $ Map.keys tabItems
   rec currentTab :: Demux t (Maybe k) <- elClass "div" divCl $ el "ul" $ do
         tabClicksList :: [Event t k] <- Map.elems <$> imapM (\k (s,_) -> headerBarLink s k $ demuxed currentTab (Just k)) tabItems
@@ -78,7 +77,7 @@ tabDisplayFull divCl (activeClass, inactive) (linkActive, _) tabItems = do
   where
     headerBarLink :: Text -> k -> Dynamic t Bool -> m (Event t k)
     headerBarLink x k isSelected = do
-      let attrs = fmap (\b -> if b then Map.singleton "class" activeClass else Map.singleton "class" inactive) isSelected
+      let attrs = fmap (\b -> if b then Map.singleton "class" activeClass else Map.empty) isSelected
       elDynAttr "li" attrs $ do
-        a <- linkClass x linkActive
+        a <- link x
         return $ fmap (const k) (_link_clicked a)
