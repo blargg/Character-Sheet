@@ -26,7 +26,6 @@ import Frontend.Storage hiding (StorageKey(..))
 import qualified Frontend.Storage as K
 import qualified Frontend.About as About
 import qualified Frontend.Elements as E
-import qualified Frontend.Materialize as Mat
 import qualified Frontend.Bulma as Bulma
 
 import Frontend.Prelude
@@ -88,7 +87,7 @@ sheet_body :: ( DomBuilder t m
               => m ()
 sheet_body =
     prerender_ loading_page $
-    Mat.tabs $
+    Bulma.tabs $
     (1 :: Int) =: ("Stats", stat_page)
     <> 2 =: ("Spells", spells_page)
 

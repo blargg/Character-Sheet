@@ -29,7 +29,6 @@ library
     Frontend.Armor
     Frontend.Bulma
     Frontend.Elements
-    Frontend.Materialize
     Frontend.Prelude
     Frontend.Spells
     Frontend.Storage
