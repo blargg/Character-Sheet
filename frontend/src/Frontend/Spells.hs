@@ -11,7 +11,6 @@ module Frontend.Spells
     ( spells_page
     ) where
 
-import Control.Monad (join, void)
 import Data.CharacterSheet
 import qualified Data.List as List
 import Data.Map (Map)
@@ -76,7 +75,11 @@ prepared_spells prepareSpell = mdo
     let removes = removeCount <$> castEv
     let updates = leftmost [inserts, removes] :: Event t (Map Spell Int -> Map Spell Int)
     spell_set <- foldDyn ($) Map.empty updates
-    castEvs <- dyn $ fmap (mapM (uncurry prepedSpell) . Map.toList) spell_set :: m (Event t [Event t Spell])
+    castEvs <- dyn $ do
+        spell_set_now <- spell_set
+        if Map.null spell_set_now
+           then return $ text "No spells prepared" *> pure []
+           else return $ (mapM (uncurry prepedSpell) . Map.toList) spell_set_now
     castEv <- switchHold never $ fmap leftmost castEvs :: m (Event t Spell)
     return ()
 
