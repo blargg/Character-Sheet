@@ -5,7 +5,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 module Frontend.Bulma
-    ( indeterminateProgress
+    ( button
+    , indeterminateProgress
     , tabs
     , textInput
     , title
@@ -20,7 +21,7 @@ import Data.Maybe (listToMaybe)
 import Data.Text (Text)
 import qualified Data.Text as Text
 import Frontend.Prelude
-import Reflex.Dom.Core hiding (textInput)
+import Reflex.Dom.Core hiding (textInput, button)
 
 -- basic definition of a materialize styled text input
 textInput :: (DomBuilder t m) => Text -> m (Dynamic t Text)
@@ -41,6 +42,12 @@ title level s = elClass ("h" <> l) ("title is-" <> l) $ text s
 subtitle :: (DomBuilder t m) => Int -> Text -> m ()
 subtitle level s = elClass ("h" <> l) ("subtitle is-" <> l) $ text s
     where l = Text.pack (show level)
+
+button :: (DomBuilder t m) => Text -> m (Event t ())
+button t = do
+    (e, _) <- elClass' "button" "button" $ text t
+    return $ domEvent Click e
+
 
 indeterminateProgress :: (DomBuilder t m) => m ()
 indeterminateProgress = elAttr "progress" ("class" =:"progress is-small is-primary" <> "max" =: "100") $ text "10%"

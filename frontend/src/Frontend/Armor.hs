@@ -22,6 +22,7 @@ import qualified Frontend.Storage as K
 import Reflex.Dom
 
 import Frontend.Prelude
+import qualified Frontend.Bulma as Bulma
 
 armorBlock :: AppWidget t m
               => Dynamic t (Abilities Int) -> m (Dynamic t [Armor Int])
@@ -54,7 +55,7 @@ armorBlock' abl minit = statBlock' (text "Armor" *> space "0.5em" *> expandColla
         armorResults <- grid $ do
             row $ labelCell "name" >> labelCell "ac" >> labelCell "max dex" >> labelCell "acp" >> labelCell "spell fail%"
             armorRows initArmorMap (addLines <> removeLines)
-        addPressed <- el "div" $ button "Add"
+        addPressed <- el "div" $ Bulma.button "New"
         let armorMap = joinDynThroughMap (fst <$$> armorResults)
         let armorList :: Dynamic t [Armor Int]
             armorList = snd <$$> M.toList <$> armorMap
