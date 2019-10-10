@@ -55,6 +55,7 @@ spell_book :: forall t m.
               )
               => m (Event t Spell)
 spell_book = do
+    Bulma.title 3 "Spell Book"
     search <- searchBox
     pb <- getPostBuild
     let initialLoad = spellRequest (searchText "") <$ pb
@@ -78,10 +79,20 @@ prepared_spells prepareSpell = mdo
     castEvs <- dyn $ do
         spell_set_now <- spell_set
         if Map.null spell_set_now
-           then return $ text "No spells prepared" *> pure []
-           else return $ (mapM (uncurry prepedSpell) . Map.toList) spell_set_now
+           then return $ no_preped_spells *> pure []
+           else return $ preped_spells spell_set_now
     castEv <- switchHold never $ fmap leftmost castEvs :: m (Event t Spell)
     return ()
+
+preped_spells :: (DomBuilder t m) => Map Spell Int -> m ([Event t Spell])
+preped_spells sps = do
+    Bulma.title 3 "Prepared Spells"
+    (mapM (uncurry prepedSpell) . Map.toList) sps
+
+no_preped_spells :: (DomBuilder t m) => m ()
+no_preped_spells = do
+    Bulma.title 3 "Prepare Spells"
+    el "p" $ text "Prepare spells from your spell book to see them here"
 
 addCount :: (Ord a) => a -> Map a Int -> Map a Int
 addCount key m = Map.insertWith (+) key 1 m
@@ -139,9 +150,13 @@ spell_list_display spells = do
     updatingPrepEv <- dyn $ do
         ss <- spells
         return $ if List.null ss
-           then text "no spells to display" *> return never
+           then empty_spell_list *> return never
            else leftmost <$> (mapM spellbook_spell ss)
     switchHold never updatingPrepEv
+
+empty_spell_list :: (DomBuilder t m) => m ()
+empty_spell_list = do
+    Bulma.title 4 "No spells found"
 
 spellbook_spell :: (DomBuilder t m) => Spell -> m (Event t Spell)
 spellbook_spell sp = do
