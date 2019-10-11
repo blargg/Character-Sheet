@@ -104,10 +104,10 @@ removeCount key m = Map.update f key m
 
 prepedSpell :: (DomBuilder t m) => Spell -> Int -> m (Event t Spell)
 prepedSpell sp remaining = do
-    castEv <- E.div $ do
-        text $ "remaining: " <> showT remaining
-        Bulma.button "Cast"
+    Bulma.hr
     E.div $ spell_display sp
+    E.div $ text $ showT remaining <> " Prepared"
+    castEv <- E.div $ Bulma.button "Cast"
     return $ sp <$ castEv
 
 searchBox :: ( DomBuilder t m
@@ -162,7 +162,7 @@ spellbook_spell :: (DomBuilder t m) => Spell -> m (Event t Spell)
 spellbook_spell sp = do
     Bulma.hr
     spell_display sp
-    prep <- E.div $ Bulma.button "prepare"
+    prep <- E.div $ Bulma.button "Prepare"
     return $ sp <$ prep
 
 spell_display :: (DomBuilder t m) => Spell -> m ()
