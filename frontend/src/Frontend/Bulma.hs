@@ -53,7 +53,7 @@ subtitle level s = elClass ("h" <> l) ("subtitle is-" <> l) $ text s
 
 button :: (DomBuilder t m) => Text -> m (Event t ())
 button t = do
-    (e, _) <- elClass' "button" "button" $ text t
+    (e, _) <- elClass' "button" "button is-primary" $ text t
     return $ domEvent Click e
 
 delete :: (DomBuilder t m) => m (Event t ())
