@@ -131,7 +131,7 @@ armorRow initialVal = row $ do
     maxDexB <- cell $ numberInput' (maxDexBonus initArmor)
     acp <- cell $ fromMaybe 0 <$$> numberInput (armorCheckPenalty initArmor)
     spellFail <- cell $ fromMaybe (Percentage 0) <$$> percentageInput (arcaneSpellFailChance initArmor)
-    delEvent <- buttonC "delete-button" "delete"
+    delEvent <- Bulma.delete
     let armorData = ArmorData <$> armorCls <*> maxDexB <*> acp <*> spellFail
     let armorVal = nmd <$> armorNm <*> armorData
     return (armorVal, delEvent)

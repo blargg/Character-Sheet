@@ -6,6 +6,7 @@
 {-# LANGUAGE TypeApplications #-}
 module Frontend.Bulma
     ( button
+    , delete
     , indeterminateProgress
     , tabs
     , textInput
@@ -13,7 +14,6 @@ module Frontend.Bulma
     , subtitle
     ) where
 
-import Control.Lens ((^.))
 import Control.Lens.Indexed (iforM_, imapM)
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -46,6 +46,11 @@ subtitle level s = elClass ("h" <> l) ("subtitle is-" <> l) $ text s
 button :: (DomBuilder t m) => Text -> m (Event t ())
 button t = do
     (e, _) <- elClass' "button" "button" $ text t
+    return $ domEvent Click e
+
+delete :: (DomBuilder t m) => m (Event t ())
+delete = do
+    (e, _) <- elClass' "button" "delete" $ return ()
     return $ domEvent Click e
 
 

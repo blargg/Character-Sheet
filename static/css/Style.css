@@ -22,19 +22,12 @@ input::focus {
     border-color: rgba(0, 0, 0, 1);
 }
 
-.delete-button {
-    background: rgba(200, 150, 150, 1.0);
-    border: none;
-    border-radius: 1em;
+.delete {
     visibility: hidden;
 }
 
-.delete-button:hover {
-    background: rgba(175, 125, 125, 1.0);
-}
-
 /* Show when hovering any part of the row */
-.row:hover .delete-button {
+.trow:hover .delete {
     visibility: visible;
 }
 
