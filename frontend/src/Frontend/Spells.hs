@@ -115,13 +115,13 @@ searchBox :: ( DomBuilder t m
              , MonadHold t m
              , PostBuild t m
              ) => m (Dynamic t SpellSearch)
-searchBox = do
-    search_text <- Bulma.textInput "Search"
+searchBox = E.divC "control" $ do
+    search_text <- E.divC "field" $ Bulma.textInput "Search"
     let classes = Map.fromList ((\cl -> (Just cl, showT cl)) <$> enumAll)
-                  <> (Nothing =: "Select Class")
+                  <> (Nothing =: "Any Class")
                   :: Map (Maybe Class) Text
-    cl <- elClass "div" "select" $ dropdown Nothing (pure classes) def
-    (minLevel, maxLevel) <- E.div $ do
+    cl <- E.divC "field" $ elClass "div" "select" $ dropdown Nothing (pure classes) def
+    (minLevel, maxLevel) <- E.divC "field" $ do
         lbl' "min level"
         minL <- numberInput' Nothing
         space'
