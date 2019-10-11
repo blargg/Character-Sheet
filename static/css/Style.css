@@ -69,6 +69,15 @@ div.nav-item>a {
     text-align: right;
 }
 
+.extra {
+    text-decoration: underline;
+    color: #7a7a7a;
+}
+
+.extra:hover {
+    text-color: hsl(217, 71%, 53%);
+}
+
 .statBlock {
     margin: 0.5rem;
     padding: 1rem;

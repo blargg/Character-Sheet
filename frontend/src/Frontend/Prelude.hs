@@ -32,6 +32,7 @@ type AppWidget t m =
     , PostBuild t m
     , PerformEvent t m
     , MonadJSM m
+    , HasJSContext (Performable m)
     , MonadJSM (Performable m)
     )
 

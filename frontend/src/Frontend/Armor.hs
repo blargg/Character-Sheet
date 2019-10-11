@@ -28,14 +28,6 @@ armorBlock :: AppWidget t m
               => Dynamic t (Abilities Int) -> m (Dynamic t [Armor Int])
 armorBlock abl = stashValue K.Armor (armorBlock' abl)
 
-collapseSection :: ( DomBuilder t m
-                   , PostBuild t m
-                   ) => Dynamic t Closed -> m a -> m a
-collapseSection isClosed = elDynAttr "div" dynAttrs
-    where attrs Closed = "style" =: "display: none"
-          attrs Open = mempty
-          dynAttrs = fmap attrs isClosed
-
 armorBlock' :: forall t m.
                ( DomBuilder t m
                , PostBuild t m

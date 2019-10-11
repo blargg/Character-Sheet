@@ -7,12 +7,14 @@
 {-# LANGUAGE TypeApplications #-}
 module Frontend.Input
     ( Closed(..)
+    , collapseSection
     , buttonC
     , editSpan
     , percentageInput
     , numberInput
     , numberInput'
     , expandCollapseButton
+    , expandCollapseText
     ) where
 
 import Common.Compose
@@ -123,7 +125,30 @@ expandCollapseButton initState = mdo
                                              else "style" =: "display: none;"
         size = "10px"
 
+expandCollapseText :: forall t m. (DomBuilder t m, MonadFix m, MonadHold t m, PostBuild t m) => Closed -> m (Dynamic t Closed)
+expandCollapseText initState = mdo
+    let initiallyOpen = initState == Open
+    expState <- isOpen <$$> toggle initiallyOpen clickedEv :: m (Dynamic t Closed)
+    openEv <- elDynAttr "div" (displayStyle Open <$> expState) $ widget Open
+    closeEv <- elDynAttr "div" (displayStyle Closed <$> expState) $ widget Closed
+    let clickedEv :: Event t ()
+        clickedEv = closeEv <> openEv
+    return expState
+    where
+        widget Open = _link_clicked <$> (linkClass "less" "extra")
+        widget Closed = _link_clicked <$> (linkClass "more" "extra")
+        displayStyle rep cur = if rep == cur then mempty
+                                             else "style" =: "display: none;"
+
 buttonC :: DomBuilder t m => Text -> Text -> m (Event t ())
 buttonC className buttonText = do
     (e, ()) <- elClass' "button" className $ text buttonText
     return $ domEvent Click e
+
+collapseSection :: ( DomBuilder t m
+                   , PostBuild t m
+                   ) => Dynamic t Closed -> m a -> m a
+collapseSection isClosed = elDynAttr "div" dynAttrs
+    where attrs Closed = "style" =: "display: none"
+          attrs Open = mempty
+          dynAttrs = fmap attrs isClosed
