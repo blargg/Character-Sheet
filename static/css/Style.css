@@ -1,6 +1,6 @@
 
 html, body {
-    background-color: lightsteelblue;
+    background-color: lightblue;
     font-family: 'Roboto', sans-serif;
     margin: 0px;
 }
@@ -79,6 +79,10 @@ div.nav-item>a {
     flex-wrap: wrap;
 }
 
+.side-margin {
+    margin: 0 0.5rem;
+}
+
 .grid {
     display: table;
 }
@@ -90,6 +94,10 @@ div.nav-item>a {
 .cell {
     display: table-cell;
     padding: 0 0.5em 0 0;
+}
+
+.card.page {
+    padding: 1rem;
 }
 
 .cell>input {

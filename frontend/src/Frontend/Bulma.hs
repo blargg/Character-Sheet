@@ -6,11 +6,15 @@
 {-# LANGUAGE TypeApplications #-}
 module Frontend.Bulma
     ( button
+    , card
+    , cardClass
     , delete
+    , hr
     , indeterminateProgress
     , tabs
     , textInput
     , title
+    , titleClass
     , subtitle
     ) where
 
@@ -39,6 +43,10 @@ title :: (DomBuilder t m) => Int -> Text -> m ()
 title level s = elClass ("h" <> l) ("title is-" <> l) $ text s
     where l = Text.pack (show level)
 
+titleClass :: (DomBuilder t m) => Text -> Int -> Text -> m ()
+titleClass cl level s = elClass ("h" <> l) (apText ("title is-" <> l) cl) $ text s
+    where l = Text.pack (show level)
+
 subtitle :: (DomBuilder t m) => Int -> Text -> m ()
 subtitle level s = elClass ("h" <> l) ("subtitle is-" <> l) $ text s
     where l = Text.pack (show level)
@@ -53,6 +61,18 @@ delete = do
     (e, _) <- elClass' "button" "delete" $ return ()
     return $ domEvent Click e
 
+hr :: (DomBuilder t m) => m ()
+hr = elClass "hr" "hr" $ return ()
+
+card :: (DomBuilder t m) => m a -> m a
+card m = cardClass "" m
+
+cardClass :: (DomBuilder t m) => Text -> m a -> m a
+cardClass clName m = elClass "div" ("card" `apText` clName) m
+
+apText :: Text -> Text -> Text
+apText t "" = t
+apText t s = t <> " " <> s
 
 indeterminateProgress :: (DomBuilder t m) => m ()
 indeterminateProgress = elAttr "progress" ("class" =:"progress is-small is-primary" <> "max" =: "100") $ text "10%"

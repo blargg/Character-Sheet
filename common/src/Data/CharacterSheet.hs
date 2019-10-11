@@ -294,8 +294,15 @@ instance Fmt SpellComp where
     fmt Focus = "Focus"
     fmt DevineFocus = "DevineFocus"
 
+fmtCompShort :: SpellComp -> Text
+fmtCompShort Verbal = "V"
+fmtCompShort Somantic = "S"
+fmtCompShort Material = "M"
+fmtCompShort Focus = "F"
+fmtCompShort DevineFocus = "DF"
+
 fmtComps :: Set SpellComp -> Text
-fmtComps scs = mconcat $ List.intersperse ", " $ fmap fmt $ Set.toList scs
+fmtComps scs = mconcat $ List.intersperse ", " $ fmap fmtCompShort $ Set.toList scs
 
 data GameDuration = FreeAction
                   | StandardAction

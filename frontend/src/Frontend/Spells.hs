@@ -54,7 +54,7 @@ spell_book :: forall t m.
               , MonadFix m
               )
               => m (Event t Spell)
-spell_book = do
+spell_book = Bulma.cardClass "page" $ do
     Bulma.title 3 "Spell Book"
     search <- searchBox
     pb <- getPostBuild
@@ -71,7 +71,7 @@ prepared_spells :: forall t m.
                    , MonadHold t m
                    , PostBuild t m
                    ) => Event t Spell -> m ()
-prepared_spells prepareSpell = mdo
+prepared_spells prepareSpell = Bulma.cardClass "page" $ mdo
     let inserts = addCount <$> prepareSpell
     let removes = removeCount <$> castEv
     let updates = leftmost [inserts, removes] :: Event t (Map Spell Int -> Map Spell Int)
@@ -106,7 +106,7 @@ prepedSpell :: (DomBuilder t m) => Spell -> Int -> m (Event t Spell)
 prepedSpell sp remaining = do
     castEv <- E.div $ do
         text $ "remaining: " <> showT remaining
-        button "Cast"
+        Bulma.button "Cast"
     E.div $ spell_display sp
     return $ sp <$ castEv
 
@@ -160,29 +160,30 @@ empty_spell_list = do
 
 spellbook_spell :: (DomBuilder t m) => Spell -> m (Event t Spell)
 spellbook_spell sp = do
-    prep <- E.div $ button "prepare"
+    Bulma.hr
     spell_display sp
+    prep <- E.div $ Bulma.button "prepare"
     return $ sp <$ prep
 
 spell_display :: (DomBuilder t m) => Spell -> m ()
-spell_display Spell{..} = E.divC "card" $ do
-    Bulma.title 3 spellName
+spell_display Spell{..} = do
+    Bulma.titleClass "is-marginless" 5 spellName
     E.div . text $ description
-    E.div . spell_levels $ spellLevel
-    E.divC "row" $ do
-        E.divC "col s6" $ lbl' "Range" >> space' >> E.span (text range)
-        E.divC "col s6" $ lbl' "Components" >> space' >> E.span (text . fmtComps $ components)
-    E.divC "row" $ do
-        E.divC "col s4" $ lbl' "Saving Throw" >> space' >> E.span (text . fmt $ savingThrow)
-        E.divC "col s4" $ lbl' "Spell Resist" >> space' >> E.span (text . showT $ spellResist)
-        E.divC "col s4" $ lbl' "Duration" >> space' >> E.span (text duration)
-    E.divC "row" $ do
-        E.divC "col s4" $ lbl' "Target" >> space' >> E.span (text . fmt $ target)
-        E.divC "col s4" $ lbl' "Cast Time" >> space' >> E.span (text . fmt $ castTime)
+    E.divC "flexContainer" $ do
+        E.divC "side-margin" $ do
+            E.div $ lbl' "Cast Time" >> space' >> E.span (text . fmt $ castTime)
+            E.div $ lbl' "Components" >> space' >> E.span (text . fmtComps $ components)
+            E.div $ lbl' "Duration" >> space' >> E.span (text duration)
+            E.div $ lbl' "Range" >> space' >> E.span (text range)
+        E.divC "side-margin" $ do
+            E.div $ lbl' "Saving Throw" >> space' >> E.span (text . fmt $ savingThrow)
+            E.div . spell_levels $ spellLevel
+            E.div $ lbl' "Spell Resist" >> space' >> E.span (text . showT $ spellResist)
+            E.div $ lbl' "Target" >> space' >> E.span (text . fmt $ target)
 
 spell_levels :: (DomBuilder t m) => SpellLevelList -> m ()
 spell_levels (SpellLevelList sl) = do
-    lbl' "spell levels" >> space'
+    lbl' "Spell Levels" >> space'
     _ <- mapM f (Map.toList sl)
     return ()
         where f (cl, SpellLevel level) = E.span (text (showT cl)) >> E.span (text (showT level))
