@@ -1,4 +1,6 @@
 frontend/dist
+backend/dist/
+
 dist-newstyle
 result
 result-android
