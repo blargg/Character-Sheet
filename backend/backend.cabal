@@ -16,6 +16,7 @@ library
                , dependent-sum
                , esqueleto
                , frontend
+               , mtl
                , obelisk-backend
                , obelisk-route
                , persistent
@@ -25,7 +26,6 @@ library
                , text
   exposed-modules:
     Backend
-  other-modules:
     Backend.Database
   ghc-options: -Wall
 
@@ -39,3 +39,4 @@ executable backend
                , common
                , frontend
                , obelisk-backend
+               , obelisk-route

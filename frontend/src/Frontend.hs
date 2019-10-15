@@ -27,6 +27,7 @@ import qualified Frontend.Storage as K
 import qualified Frontend.About as About
 import qualified Frontend.Elements as E
 import qualified Frontend.Bulma as Bulma
+import qualified Frontend.License as License
 
 import Frontend.Prelude
 import Obelisk.Route.Frontend
@@ -51,6 +52,7 @@ body = subRoute_ $ \x -> do
     navigation x $ case x of
         FrontendRoute_Main -> sheet_body
         FrontendRoute_About -> About.main
+        FrontendRoute_License -> License.main
 
 navigation :: ( DomBuilder t m
               , RouteToUrl (R FrontendRoute) m
@@ -61,6 +63,7 @@ navigation currentRoute content = do
     E.divC "topnav" $ do
         navItem' FrontendRoute_Main
         navItem' FrontendRoute_About
+        navItem' FrontendRoute_License
     elClass "section" "section" $ E.divC "container" content
         where navItem' route = navItem (samePage currentRoute route) route
 

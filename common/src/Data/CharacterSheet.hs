@@ -39,6 +39,7 @@ module Data.CharacterSheet
     , d -- single die
     , highestFaceValue
     , initiative'
+    , isSpellCaster
     , nmd
     , fmtComps
     , pathfinderSkills
@@ -66,6 +67,9 @@ import GHC.Generics
 -- user
 class Fmt a where
     fmt :: a -> Text
+
+instance Fmt Text where
+    fmt t = t
 
 data CharacterSheet a =
     CharacterSheet { abilities :: Abilities a
@@ -337,7 +341,7 @@ newtype SpellLevel = SpellLevel Int
     deriving (Eq, Ord, Generic, ToJSON, FromJSON, Show)
 
 newtype SpellLevelList = SpellLevelList {toMap :: Map Class SpellLevel}
-    deriving (Eq, Ord, Generic, ToJSON, FromJSON)
+    deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON)
 
 toList :: SpellLevelList -> [(Class, SpellLevel)]
 toList = M.toList . toMap
@@ -355,6 +359,19 @@ data Class = Bard
            | Wizard
            deriving (Eq, Enum, Ord, Show, Read, Generic, ToJSON, FromJSON, ToJSONKey, FromJSONKey)
 
+isSpellCaster :: Class -> Bool
+isSpellCaster Bard = True
+isSpellCaster Barbarian = False
+isSpellCaster Cleric = True
+isSpellCaster Druid = True
+isSpellCaster Fighter = False
+isSpellCaster Monk = False
+isSpellCaster Paladin = True
+isSpellCaster Ranger = True
+isSpellCaster Rogue = False
+isSpellCaster Sorcerer = True
+isSpellCaster Wizard = True
+
 data Target = Personal -- affects only yourself
             | Area
             | Creature
@@ -367,7 +384,7 @@ instance Fmt Target where
 
 -- Defines a spell that can be cast
 data Spell = Spell
-    { castTime :: GameDuration
+    { castTime :: Text
     , components :: Set SpellComp
     , description :: Text
     , duration :: Text
@@ -376,9 +393,9 @@ data Spell = Spell
     , spellLevel :: SpellLevelList
     , spellName :: Text
     , spellResist :: Bool
-    , target :: Target
+    , target :: Text
     }
-    deriving (Eq, Ord, Generic, ToJSON, FromJSON)
+    deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON)
 
 pathfinderSkills :: Map Text Ability
 pathfinderSkills = M.fromList [ ("Acrobatics", Dexterity)

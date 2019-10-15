@@ -42,16 +42,19 @@ data BackendRoute :: * -> * where
 data FrontendRoute :: * -> * where
   FrontendRoute_Main :: FrontendRoute ()
   FrontendRoute_About :: FrontendRoute ()
+  FrontendRoute_License :: FrontendRoute ()
   -- This type is used to define frontend routes, i.e. ones for which the backend will serve the frontend.
 
 -- Name of the page to display to the user
 pageName :: FrontendRoute x -> Text
 pageName FrontendRoute_Main = "Sheet"
 pageName FrontendRoute_About = "About"
+pageName FrontendRoute_License = "License"
 
 samePage :: FrontendRoute a -> FrontendRoute b -> Bool
 samePage FrontendRoute_Main FrontendRoute_Main = True
 samePage FrontendRoute_About FrontendRoute_About = True
+samePage FrontendRoute_License FrontendRoute_License = True
 samePage _ _ = False
 
 backendRouteEncoder
@@ -66,6 +69,7 @@ backendRouteEncoder = handleEncoder (const (InL BackendRoute_Missing :/ ())) $
       -- in this example, we have none, so we insist on it.
       FrontendRoute_Main -> PathEnd $ unitEncoder mempty
       FrontendRoute_About -> PathSegment "about" $ unitEncoder mempty
+      FrontendRoute_License -> PathSegment "license" $ unitEncoder mempty
 
 
 concat <$> mapM deriveRouteComponent

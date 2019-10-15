@@ -95,7 +95,7 @@ searchBox :: ( DomBuilder t m
              ) => m (Dynamic t SpellSearch)
 searchBox = E.divC "control" $ do
     search_text <- E.divC "field" $ Bulma.textInput "Search"
-    let classes = Map.fromList ((\cl -> (Just cl, showT cl)) <$> enumAll)
+    let classes = Map.fromList ((\cl -> (Just cl, showT cl)) <$> filter isSpellCaster enumAll)
                   <> (Nothing =: "Any Class")
                   :: Map (Maybe Class) Text
     cl <- E.divC "field" $ elClass "div" "select" $ dropdown Nothing (pure classes) def

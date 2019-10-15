@@ -11,10 +11,8 @@ module Backend where
 import Common.Route
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader
-import Data.CharacterSheet
 import Data.Dependent.Sum
 import Data.Functor.Identity
-import qualified Data.Set as Set
 import Obelisk.Backend
 import Obelisk.Route
 import Snap
@@ -22,7 +20,6 @@ import qualified Data.Aeson as Aeson
 
 import Backend.Database as DB
 import Common.Api
-import Common.Prelude
 
 import Database.Persist.Sqlite
 
@@ -34,9 +31,7 @@ backend = Backend
 
 run_backend :: ((R BackendRoute -> Snap ()) -> IO ()) -> IO ()
 run_backend serve = do
-    runSqlite ":memory:" $ do
-        createDatabase exampleSpells
-        transactionSave
+    runSqlite "pf.db" $ do
         sql <- ask
         liftIO $ serve (server sql)
 
@@ -65,46 +60,3 @@ spellListHandler = do
           modifyResponse $ setResponseStatus 500 "Internal Server Error"
           writeBS "500 error"
           finishWith =<< getResponse
-
--- example list of spells for initial testing
-exampleSpells :: [Spell]
-exampleSpells = [ fireball, ray_of_frost, saving_finale ]
-
-fireball :: Spell
-fireball = Spell { spellName = "fireball"
-                 , spellLevel = SpellLevelList $ Wizard =: SpellLevel 3 <> Sorcerer =: SpellLevel 3
-                 , description = "shoots fireball at person"
-                 , components = Set.fromList [ Verbal, Somantic, Material ]
-                 , castTime = StandardAction
-                 , duration = "instanteneous"
-                 , range = "400ft + 40ft / level"
-                 , savingThrow = Ref
-                 , spellResist = True
-                 , target = Area
-                 }
-
-ray_of_frost :: Spell
-ray_of_frost = Spell { spellName = "ray of frost"
-                 , spellLevel = SpellLevelList $ Wizard =: SpellLevel 0 <> Sorcerer =: SpellLevel 0
-                 , description = "beam of frost, slows"
-                 , components = Set.fromList [ Verbal, Somantic ]
-                 , castTime = StandardAction
-                 , duration = "instanteneous"
-                 , range = "25ft + 5ft / 2 level"
-                 , savingThrow = None
-                 , spellResist = True
-                 , target = Creature
-                 }
-
-saving_finale :: Spell
-saving_finale = Spell { spellName = "saving finale"
-                 , spellLevel = SpellLevelList $ Bard =: SpellLevel 1
-                 , description = "allows re-roll of failed saving throw"
-                 , components = Set.fromList [ Verbal, Somantic ]
-                 , castTime = StandardAction
-                 , duration = "instanteneous"
-                 , range = "25ft + 5ft / 2 level"
-                 , savingThrow = Will
-                 , spellResist = True
-                 , target = Creature
-                 }

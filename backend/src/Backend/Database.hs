@@ -15,6 +15,8 @@
 
 module Backend.Database
     ( createDatabase
+    , insertSpell
+    , migrateAll
     , searchSpells
     ) where
 
@@ -33,14 +35,14 @@ import Common.Api
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 SpellRow
     name Text
-    castTime GameDuration
+    castTime Text
     components (Set SpellComp)
     description Text
     duration Text
     range Text
     savingThrow SavingThrow
     resist Bool
-    target Target
+    target Text
     deriving Show
 SpellLevelRow
     spellId SpellRowId
@@ -128,4 +130,5 @@ searchSpells SpellSearch{ prefix, searchClass, minLevel, maxLevel} =
         case maxLevel of
           Just maxL -> where_ (spLvl ^. SpellLevelRowSpellLevel <=. val maxL)
           Nothing -> return()
+        limit 10
         return (sp, spLvl)
