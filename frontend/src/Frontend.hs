@@ -49,7 +49,7 @@ body :: ( DomBuilder t m
         )
      => RoutedT t (R FrontendRoute) m ()
 body = subRoute_ $ \x -> do
-    navigation x $ case x of
+    navigation $ case x of
         FrontendRoute_Main -> sheet_body
         FrontendRoute_About -> About.main
         FrontendRoute_License -> License.main
@@ -58,22 +58,19 @@ navigation :: ( DomBuilder t m
               , RouteToUrl (R FrontendRoute) m
               , SetRoute t (R FrontendRoute) m
               )
-              => FrontendRoute x -> m a -> m a
-navigation currentRoute content = do
-    E.divC "topnav" $ do
-        navItem' FrontendRoute_Main
-        navItem' FrontendRoute_About
-        navItem' FrontendRoute_License
+              => m a -> m a
+navigation content = do
+    Bulma.navbar (navItem FrontendRoute_Main) $ do
+        navItem FrontendRoute_About
+        navItem FrontendRoute_License
     elClass "section" "section" $ E.divC "container" content
-        where navItem' route = navItem (samePage currentRoute route) route
 
 navItem :: ( DomBuilder t m
            , RouteToUrl (R FrontendRoute) m
            , SetRoute t (R FrontendRoute) m)
-           => Bool -> FrontendRoute () -> m ()
-navItem selected linkTo = E.divC cl $ routeLink (linkTo :/ ()) $ text (pageName linkTo)
-    where cl = if selected then "nav-item selected"
-                           else "nav-item"
+           => FrontendRoute ()
+           -> m ()
+navItem linkTo =  Bulma.navItem (pageName linkTo) (linkTo :/ ())
 
 header :: (DomBuilder t m) => m ()
 header = do

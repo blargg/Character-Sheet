@@ -47,7 +47,7 @@ data FrontendRoute :: * -> * where
 
 -- Name of the page to display to the user
 pageName :: FrontendRoute x -> Text
-pageName FrontendRoute_Main = "Sheet"
+pageName FrontendRoute_Main = "Character Sheet"
 pageName FrontendRoute_About = "About"
 pageName FrontendRoute_License = "License"
 
