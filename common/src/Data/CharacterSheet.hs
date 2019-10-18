@@ -289,7 +289,7 @@ skillBonus abl sk = ablMod + skillRanks sk + skillMod sk + classSkillBonus sk
 
 -- Spell components, represent materials and actions required to cast a spell
 data SpellComp = Verbal | Somantic | Material | Focus | DevineFocus
-    deriving (Eq, Ord, Generic, ToJSON, FromJSON, Enum, Show)
+    deriving (Eq, Ord, Generic, ToJSON, FromJSON, Enum, Bounded, Show)
 
 instance Fmt SpellComp where
     fmt Verbal = "Verbal"
@@ -311,7 +311,7 @@ fmtComps scs = mconcat $ List.intersperse ", " $ fmap fmtCompShort $ Set.toList 
 data GameDuration = FreeAction
                   | StandardAction
                   | FullRound
-    deriving (Eq, Ord, Generic, ToJSON, FromJSON, Enum, Show)
+    deriving (Eq, Ord, Generic, ToJSON, FromJSON, Enum, Bounded, Show)
 
 instance Fmt GameDuration where
     fmt FreeAction = "Free Action"
@@ -319,7 +319,7 @@ instance Fmt GameDuration where
     fmt FullRound = "Full Round"
 
 data SavingThrow = Fort | Ref | Will | None
-    deriving (Eq, Ord, Generic, ToJSON, FromJSON, Enum, Show)
+    deriving (Eq, Ord, Generic, ToJSON, FromJSON, Enum, Bounded, Show)
 
 instance Fmt SavingThrow where
     fmt Fort = "Fortitude"
