@@ -8,8 +8,6 @@ library
   if impl(ghcjs)
     buildable: False
   build-depends: base
-               , HDBC
-               , HDBC-sqlite3
                , aeson
                , common
                , containers
