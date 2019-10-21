@@ -28,6 +28,7 @@ import Data.Set (Set)
 import Data.Text (Text)
 import Data.CharacterSheet hiding (name)
 
+import Backend.Orphans
 import Database.Esqueleto
 import Database.Persist.TH
 import Common.Api
