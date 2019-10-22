@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Backend.Orphans where
 
 import Data.CharacterSheet
-import Data.Text (Text)
 import qualified Data.Text as T
 import Database.Esqueleto
 
