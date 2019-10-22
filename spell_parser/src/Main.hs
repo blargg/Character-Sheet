@@ -68,8 +68,8 @@ fromCsv SpellCsv{..} =
              , CS.range = range
              , CS.duration = duration
              , CS.components = set_exists focus CS.Focus
-                            <> set_exists somatic CS.Somantic
-                            <> set_exists divine_focus CS.DevineFocus
+                            <> set_exists somatic CS.Somatic
+                            <> set_exists divine_focus CS.DivineFocus
                             <> set_exists material CS.Material
              }
                  where set_exists 1 v = Set.singleton v

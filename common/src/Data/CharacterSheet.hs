@@ -288,22 +288,22 @@ skillBonus abl sk = ablMod + skillRanks sk + skillMod sk + classSkillBonus sk
           ablMod = abilityMod (index abl ability)
 
 -- Spell components, represent materials and actions required to cast a spell
-data SpellComp = Verbal | Somantic | Material | Focus | DevineFocus
+data SpellComp = Verbal | Somatic | Material | Focus | DivineFocus
     deriving (Eq, Ord, Generic, ToJSON, FromJSON, Enum, Bounded, Show)
 
 instance Fmt SpellComp where
     fmt Verbal = "Verbal"
-    fmt Somantic = "Somantic"
+    fmt Somatic = "Somatic"
     fmt Material = "Material"
     fmt Focus = "Focus"
-    fmt DevineFocus = "DevineFocus"
+    fmt DivineFocus = "DivineFocus"
 
 fmtCompShort :: SpellComp -> Text
 fmtCompShort Verbal = "V"
-fmtCompShort Somantic = "S"
+fmtCompShort Somatic = "S"
 fmtCompShort Material = "M"
 fmtCompShort Focus = "F"
-fmtCompShort DevineFocus = "DF"
+fmtCompShort DivineFocus = "DF"
 
 fmtComps :: Set SpellComp -> Text
 fmtComps scs = mconcat $ List.intersperse ", " $ fmap fmtCompShort $ Set.toList scs
