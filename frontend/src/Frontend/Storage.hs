@@ -33,6 +33,7 @@ data StorageKey = Abilities
                 | Name
                 | Skill
                 | Initiative
+                | PreparedSpells
                 | SpellSets
                 deriving (Show)
 

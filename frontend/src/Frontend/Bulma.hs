@@ -6,6 +6,7 @@
 {-# LANGUAGE TypeApplications #-}
 module Frontend.Bulma
     ( button
+    , buttonPrimary
     , card
     , cardClass
     , delete
@@ -61,9 +62,16 @@ subtitle :: (DomBuilder t m) => Int -> Text -> m ()
 subtitle level s = elClass ("h" <> l) ("subtitle is-" <> l) $ text s
     where l = Text.pack (show level)
 
+buttonPrimary :: (DomBuilder t m) => Text -> m (Event t ())
+buttonPrimary = buttonClass "is-primary"
+
 button :: (DomBuilder t m) => Text -> m (Event t ())
-button t = do
-    (e, _) <- elClass' "button" "button is-primary" $ text t
+button = buttonClass ""
+
+buttonClass :: (DomBuilder t m) => Text -> Text -> m (Event t ())
+buttonClass cl t = do
+    let btnClass = "button" `apText` cl
+    (e, _) <- elClass' "button" btnClass $ text t
     return $ domEvent Click e
 
 delete :: (DomBuilder t m) => m (Event t ())

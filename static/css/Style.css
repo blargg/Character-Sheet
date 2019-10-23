@@ -88,6 +88,10 @@ div.nav-item>a {
     flex-wrap: wrap;
 }
 
+.top-margin {
+    margin-top: 1rem;
+}
+
 .side-margin {
     margin: 0 0.5rem;
 }

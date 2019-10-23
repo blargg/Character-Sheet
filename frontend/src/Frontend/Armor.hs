@@ -47,7 +47,7 @@ armorBlock' abl minit = statBlock' (text "Armor" *> space "0.5em" *> expandColla
         armorResults <- grid $ do
             row $ labelCell "name" >> labelCell "ac" >> labelCell "max dex" >> labelCell "acp" >> labelCell "spell fail%"
             armorRows initArmorMap (addLines <> removeLines)
-        addPressed <- el "div" $ Bulma.button "New"
+        addPressed <- el "div" $ Bulma.buttonPrimary "New"
         let armorMap = joinDynThroughMap (fst <$$> armorResults)
         let armorList :: Dynamic t [Armor Int]
             armorList = snd <$$> M.toList <$> armorMap

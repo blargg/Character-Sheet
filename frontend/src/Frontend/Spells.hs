@@ -30,7 +30,10 @@ spells_page :: forall t m.
                AppWidget t m
                => m ()
 spells_page = E.divC "columns" $ mdo
-    E.divC "column" $ prepared_spells prepEv
+    E.divC "column" $ mdo
+        preped <- prepared_spells prepEv setPrepedEv
+        setPrepedEv <- saved_spell_sets preped
+        return ()
     prepEv <- E.divC "column" spell_book
     return ()
 
@@ -49,16 +52,24 @@ spell_book = Bulma.cardClass "page" $ do
     spell_list_display displayedSpells
 
 prepared_spells :: forall t m.
-                   AppWidget t m => Event t Spell -> m ()
-prepared_spells prepareSpell = () <$ Storage.stashValue Storage.SpellSets (prepared_spells' prepareSpell)
+                   AppWidget t m
+                     => Event t Spell
+                     -> Event t PrepSet -- ^ clears the current set, and prepares this one
+                     -> m (Dynamic t PrepSet)
+prepared_spells prepareSpell prepSet = Storage.stashValue Storage.PreparedSpells (prepared_spells' prepareSpell prepSet)
 
 prepared_spells' :: forall t m.
-                   AppWidget t m => Event t Spell -> Maybe PrepSet -> m (Dynamic t PrepSet)
-prepared_spells' prepareSpell mInit = Bulma.cardClass "page" $ mdo
+                   AppWidget t m
+                     => Event t Spell
+                     -> Event t PrepSet
+                     -> Maybe PrepSet
+                     -> m (Dynamic t PrepSet)
+prepared_spells' prepareSpell prepSet mInit = Bulma.cardClass "page" $ mdo
     let initialSet = fromMaybe Map.empty mInit
     let inserts = addCount <$> prepareSpell
     let removes = removeCount <$> castEv
-    let updates = leftmost [inserts, removes] :: Event t (Map Spell Int -> Map Spell Int)
+    let clearAndSet = const <$> prepSet
+    let updates = leftmost [inserts, removes, clearAndSet] :: Event t (Map Spell Int -> Map Spell Int)
     spell_set <- foldDyn ($) initialSet updates
     castEvs <- dyn $ do
         spell_set_now <- spell_set
@@ -93,6 +104,24 @@ prepedSpell sp remaining = do
     E.div $ text $ showT remaining <> " Prepared"
     castEv <- E.div $ Bulma.button "Cast"
     return $ sp <$ castEv
+
+saved_spell_sets :: AppWidget t m => Dynamic t PrepSet -> m (Event t PrepSet)
+saved_spell_sets prepared = Bulma.cardClass "page top-margin" $ do
+    Bulma.title 3 "Saved Spell Sets"
+    prepEv <- saved_set (current prepared) "Spell Set 1"
+    return prepEv
+
+saved_set :: AppWidget t m => Behavior t PrepSet -> Text -> m (Event t PrepSet)
+saved_set currentPreped setName = do
+    E.div $ text setName
+    (prepEv, saveEv) <- E.divC "field is-grouped" $ do
+        prepEv' <- E.divC "control" $ Bulma.buttonPrimary "Prep"
+        saveEv' <- E.divC "control" $ Bulma.button "Save"
+        return (prepEv', saveEv')
+    initialSaved <- fromMaybe Map.empty <$> Storage.loadJson Storage.SpellSets
+    savedSet <- holdDyn initialSaved (tag currentPreped saveEv)
+    Storage.saveDyn Storage.SpellSets savedSet
+    return $ tag (current savedSet) prepEv
 
 searchBox :: ( DomBuilder t m
              , MonadFix m
