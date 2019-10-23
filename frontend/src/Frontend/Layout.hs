@@ -15,6 +15,7 @@ module Frontend.Layout
 import Reflex.Dom.Core
 
 import Data.Text (Text)
+import qualified Frontend.Bulma as Bulma
 import qualified Frontend.Elements as E
 
 grid :: (DomBuilder t m) => m a -> m a
@@ -39,8 +40,8 @@ statBlock :: (DomBuilder t m) => Text -> m a -> m a
 statBlock title = statBlock' (text title) . const
 
 statBlock' :: (DomBuilder t m) => m b -> (b -> m a) -> m a
-statBlock' titleWidget innerWidget = elClass "div" "card z-depth-2 statBlock" $ do
-    headerValue <- elClass "h4" "blockHeader" $ titleWidget
+statBlock' titleWidget innerWidget = elClass "div" "card statBlock" $ do
+    headerValue <- Bulma.titleClass' "is-marginless" 4 $ titleWidget
     innerWidget headerValue
 
 space :: (DomBuilder t m) => Text -> m ()

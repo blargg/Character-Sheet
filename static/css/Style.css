@@ -5,20 +5,15 @@ html, body {
     margin: 0px;
 }
 
-div.main {
-    max-width: 500px;
-    margin: 0 auto;
-    padding: 1em;
-}
-
 input {
     font-family: 'Roboto', sans-serif;
     height: 15px; /* TODO should calculate the height */
     border-width: 0 0 1px 0;
     border-color: rgba(0, 0, 0, 0.25);
+    outline: none;
 }
 
-input::focus {
+input:focus {
     border-color: rgba(0, 0, 0, 1);
 }
 
@@ -31,39 +26,10 @@ input::focus {
     visibility: visible;
 }
 
-
-/* Navigation */
-.topnav {
-    width: 100%;
-    background-color: #789;
-}
-
-div.nav-item {
-    display: inline-block;
-    padding: 8px;
-    background-origin: padding-box;
-}
-
-div.nav-item:hover {
-    background-color: #567;
-}
-
-div.nav-item.selected {
-    background-color: #000;
-}
-
-div.nav-item>a {
-    color: white;
-    text-decoration: none;
-}
-
-.blockHeader {
-    margin-bottom: 0px;
-}
-
 .numberInput {
     width: 2em;
 }
+
 .num {
     font-family: 'Roboto Mono', monospace;
     text-align: right;
@@ -128,11 +94,6 @@ div.nav-item>a {
     color: #444;
 }
 
-.collapse{
-    transition: max-height 0.2s ease-out;
-    overflow: hidden;
-}
-
 .single-line-edit>div,
 .single-line-edit>p,
 .single-line-edit>br {
@@ -159,16 +120,4 @@ input[type="number"]::-webkit-inner-spin-button {
 
 input[type="number"] {
     -moz-appearance: textfield;
-}
-
-button {
-    font-family: 'Roboto', sans-serif;
-    border-width: 0;
-
-    background-color: lightgray;
-    border-color: black;
-}
-
-button:hover {
-    background-color: gray;
 }

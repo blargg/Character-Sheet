@@ -15,7 +15,9 @@ module Frontend.Bulma
     , tabs
     , textInput
     , title
+    , title'
     , titleClass
+    , titleClass'
     , subtitle
     , navItem
     , navbar
@@ -51,11 +53,16 @@ textInput placeholder = do
             elConf = inputElementConfig_elementConfig . elementConfig_initialAttributes
 
 title :: (DomBuilder t m) => Int -> Text -> m ()
-title level s = elClass ("h" <> l) ("title is-" <> l) $ text s
-    where l = Text.pack (show level)
+title level s = title' level (text s)
+
+title' :: (DomBuilder t m) => Int -> m a -> m a
+title' = titleClass' ""
 
 titleClass :: (DomBuilder t m) => Text -> Int -> Text -> m ()
-titleClass cl level s = elClass ("h" <> l) (apText ("title is-" <> l) cl) $ text s
+titleClass cl level s = titleClass' cl level (text s)
+
+titleClass' :: (DomBuilder t m) => Text -> Int -> m a -> m a
+titleClass' cl level inner = elClass ("h" <> l) (apText ("title is-" <> l) cl) $ inner
     where l = Text.pack (show level)
 
 subtitle :: (DomBuilder t m) => Int -> Text -> m ()
