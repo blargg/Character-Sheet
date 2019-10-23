@@ -33,6 +33,7 @@ data StorageKey = Abilities
                 | Name
                 | Skill
                 | Initiative
+                | SpellSets
                 deriving (Show)
 
 loadJson :: (FromJSON a, MonadJSM m) => StorageKey -> m (Maybe a)

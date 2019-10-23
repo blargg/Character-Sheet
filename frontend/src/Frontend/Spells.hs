@@ -23,6 +23,7 @@ import qualified Frontend.Elements as E
 import Frontend.Input
 import Frontend.Layout
 import Frontend.Prelude
+import qualified Frontend.Storage as Storage
 import Common.Api
 
 spells_page :: forall t m.
@@ -49,18 +50,23 @@ spell_book = Bulma.cardClass "page" $ do
 
 prepared_spells :: forall t m.
                    AppWidget t m => Event t Spell -> m ()
-prepared_spells prepareSpell = Bulma.cardClass "page" $ mdo
+prepared_spells prepareSpell = () <$ Storage.stashValue Storage.SpellSets (prepared_spells' prepareSpell)
+
+prepared_spells' :: forall t m.
+                   AppWidget t m => Event t Spell -> Maybe PrepSet -> m (Dynamic t PrepSet)
+prepared_spells' prepareSpell mInit = Bulma.cardClass "page" $ mdo
+    let initialSet = fromMaybe Map.empty mInit
     let inserts = addCount <$> prepareSpell
     let removes = removeCount <$> castEv
     let updates = leftmost [inserts, removes] :: Event t (Map Spell Int -> Map Spell Int)
-    spell_set <- foldDyn ($) Map.empty updates
+    spell_set <- foldDyn ($) initialSet updates
     castEvs <- dyn $ do
         spell_set_now <- spell_set
         if Map.null spell_set_now
            then return $ no_preped_spells *> pure []
            else return $ preped_spells spell_set_now
     castEv <- switchHold never $ fmap leftmost castEvs :: m (Event t Spell)
-    return ()
+    return spell_set
 
 preped_spells :: AppWidget t m => Map Spell Int -> m ([Event t Spell])
 preped_spells sps = do

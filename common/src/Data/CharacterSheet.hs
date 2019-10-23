@@ -23,6 +23,7 @@ module Data.CharacterSheet
     , Named(..)
     , Nmd
     , Percentage(..)
+    , PrepSet
     , SavingThrow(..)
     , School(..)
     , Skill(..)
@@ -382,6 +383,9 @@ instance Fmt Target where
     fmt Area = "Area"
     fmt Creature = "Creature"
 
+-- Spell set for prepared casters
+type PrepSet = Map Spell Int
+
 -- Defines a spell that can be cast
 data Spell = Spell
     { castTime :: Text
@@ -395,7 +399,7 @@ data Spell = Spell
     , spellResist :: Bool
     , target :: Text
     }
-    deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON)
+    deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON, FromJSONKey, ToJSONKey)
 
 pathfinderSkills :: Map Text Ability
 pathfinderSkills = M.fromList [ ("Acrobatics", Dexterity)
