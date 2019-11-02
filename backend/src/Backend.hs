@@ -54,8 +54,9 @@ spellListHandler = do
     case Aeson.decode rb :: Maybe SpellSearch of
       Just search -> do
           sps <- searchSpells search
-          liftIO . putStrLn $ "spells retrieved: " ++ show (length sps)
-          writeLBS . Aeson.encode $ sps
+          pages <- countPages search
+          let curpage = page search
+          writeLBS . Aeson.encode $ spellResponse sps curpage pages
       Nothing -> lift $ do
           modifyResponse $ setResponseStatus 500 "Internal Server Error"
           writeBS "500 error"

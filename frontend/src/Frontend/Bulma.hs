@@ -12,6 +12,7 @@ module Frontend.Bulma
     , delete
     , hr
     , indeterminateProgress
+    , pagination
     , tabs
     , textInput
     , title
@@ -27,6 +28,7 @@ module Frontend.Bulma
 
 import Control.Lens hiding (Bifunctor, bimap, universe, element)
 import Control.Lens.Indexed (iforM_, imapM)
+import Control.Monad (forM)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Maybe (listToMaybe)
@@ -201,3 +203,32 @@ tabDisplayFull divCl activeClass tabItems = do
       elDynAttr "li" attrs $ do
         a <- link x
         return $ fmap (const k) (_link_clicked a)
+
+pgNumbers :: Int -> Int -> [Int]
+pgNumbers curPage maxPage = take (min 10 maxPage) $
+    [max (curPage - 5) 1 .. curPage] ++ [curPage + 1..]
+
+pagination :: ( DomBuilder t m
+              , MonadHold t m
+              , PostBuild t m
+              , MonadFix m
+              )
+           => Event t () -> Dynamic t Int -> m (Dynamic t Int)
+pagination reset numPages = mdo
+    curPage <- holdDyn 1 (leftmost [1 <$ reset, setPage])
+    setPageSwtch <- dyn $ staticPagination <$> numPages <*> curPage
+    setPage <- switchHold never setPageSwtch
+    holdUniqDyn curPage
+
+staticPagination :: DomBuilder t m => Int -> Int -> m (Event t Int)
+staticPagination maxPages curPage = elClass "nav" "pagination" $ do
+    allPageEvents <- elClass "ul" "pagination-list" $ do
+        forM (pgNumbers curPage maxPages) $ \pg -> pageNumber (pg == curPage) pg
+    return (leftmost allPageEvents)
+
+pageNumber :: DomBuilder t m => Bool -> Int -> m (Event t Int)
+pageNumber selected n = el "li" $ do
+    l <- linkClass (showT n) (cl selected)
+    return $ n <$ _link_clicked l
+        where cl True = "pagination-link is-current"
+              cl False = "pagination-link"

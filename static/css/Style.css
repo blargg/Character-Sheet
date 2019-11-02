@@ -84,6 +84,10 @@ input:focus {
     margin: 0 auto;
 }
 
+.margin {
+    margin: 1rem;
+}
+
 /* Consider making this another class for maintenance */
 .cell.lbl {
     text-align: center;
@@ -120,4 +124,9 @@ input[type="number"]::-webkit-inner-spin-button {
 
 input[type="number"] {
     -moz-appearance: textfield;
+}
+
+/* Adjustments to Bulma.css */
+.pagination-list {
+    justify-content: center;
 }

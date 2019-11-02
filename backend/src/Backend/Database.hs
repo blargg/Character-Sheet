@@ -14,7 +14,8 @@
 {-# language TypeFamilies #-}
 
 module Backend.Database
-    ( createDatabase
+    ( countPages
+    , createDatabase
     , insertSpell
     , migrateAll
     , searchSpells
@@ -115,21 +116,45 @@ totalFreq list = foldl insertPair Map.empty list
 
 -- searchSpells :: (MonadIO m) => SpellSearch -> ReaderT SqlBackend m [(Entity SpellRow, Entity SpellLevelRow)]
 searchSpells :: (MonadIO m) => SpellSearch -> ReaderT SqlBackend m [Spell]
-searchSpells SpellSearch{ prefix, searchClass, minLevel, maxLevel} =
+searchSpells spSearch =
     fmap joinSpells $
     select $
     from $ \(sp `InnerJoin` spLvl) -> do
         on (sp ^. SpellRowId ==. spLvl ^. SpellLevelRowSpellId)
-        let qPrefix = prefix <> "%"
-        where_ (sp ^. SpellRowName `like` val qPrefix)
-        case searchClass of
-          Just cl -> where_ (spLvl ^. SpellLevelRowClassName ==. val cl)
-          Nothing -> return ()
-        case minLevel of
-          Just minL -> where_ (spLvl ^. SpellLevelRowSpellLevel >=. val minL)
-          Nothing -> return()
-        case maxLevel of
-          Just maxL -> where_ (spLvl ^. SpellLevelRowSpellLevel <=. val maxL)
-          Nothing -> return()
-        limit 10
+        filterSpells spSearch sp spLvl
+        limit spellsPerPage
+        offset $ (fromIntegral (page spSearch - 1)) * spellsPerPage
         return (sp, spLvl)
+
+spellsPerPage :: (Num a) => a
+spellsPerPage = 10
+
+countPages :: (MonadIO m) => SpellSearch -> ReaderT SqlBackend m Int
+countPages spSearch = do
+    [spCount] <- countSpellRows' spSearch
+    return . ceiling $ fromIntegral (unValue spCount) / (spellsPerPage :: Float)
+
+countSpellRows' :: (MonadIO m) => SpellSearch -> ReaderT SqlBackend m [Value Int]
+countSpellRows' spSearch =
+    select $
+    from $ \(sp `InnerJoin` spLvl) -> do
+        on (sp ^. SpellRowId ==. spLvl ^. SpellLevelRowSpellId)
+        filterSpells spSearch sp spLvl
+        return countRows :: SqlQuery (SqlExpr (Value Int))
+
+filterSpells :: SpellSearch
+             -> SqlExpr (Entity SpellRow)
+             -> SqlExpr (Entity SpellLevelRow)
+             -> SqlQuery ()
+filterSpells (PagedSearch (SpellQuery{ prefix, searchClass, minLevel, maxLevel }) page) sp spLvl = do
+    let qPrefix = prefix <> "%"
+    where_ (sp ^. SpellRowName `like` val qPrefix)
+    case searchClass of
+      Just cl -> where_ (spLvl ^. SpellLevelRowClassName ==. val cl)
+      Nothing -> return ()
+    case minLevel of
+      Just minL -> where_ (spLvl ^. SpellLevelRowSpellLevel >=. val minL)
+      Nothing -> return()
+    case maxLevel of
+      Just maxL -> where_ (spLvl ^. SpellLevelRowSpellLevel <=. val maxL)
+      Nothing -> return()

@@ -40,16 +40,21 @@ spells_page = E.divC "columns" $ mdo
 spell_book :: forall t m.
               AppWidget t m
               => m (Event t Spell)
-spell_book = Bulma.cardClass "page" $ do
+spell_book = Bulma.cardClass "page" $ mdo
     Bulma.title 3 "Spell Book"
-    search <- searchBox
+    query <- searchBox
     pb <- getPostBuild
-    let initialLoad = spellRequest (searchText "") <$ pb
+    let search = PagedSearch <$> query <*> curPage
+    let initialLoad = fmap spellRequest $ tag (current search) pb
     let spellLoadReqEvents = leftmost [fmap spellRequest (updated search), initialLoad ]
     -- event when we load a new set of spells to show
-    spellLoad <- fmapMaybe decodeXhrResponse <$> performRequestAsync spellLoadReqEvents :: m (Event t [Spell])
-    displayedSpells <- holdDyn [] spellLoad
-    spell_list_display displayedSpells
+    spellLoad <- fmapMaybe decodeXhrResponse <$> performRequestAsync spellLoadReqEvents :: m (Event t SpellSearchResponse)
+    spellPage <- holdDyn emptyResponse spellLoad
+    let displayedSpells = fmap pageData spellPage
+    spellPrepedEv <- spell_list_display displayedSpells
+    curPage <- E.divC "margin" $ Bulma.pagination (() <$ updated query) (totalPages <$> spellPage)
+    return spellPrepedEv
+        where emptyResponse = PagedResponse [] 0 0
 
 prepared_spells :: forall t m.
                    AppWidget t m
@@ -127,7 +132,7 @@ searchBox :: ( DomBuilder t m
              , MonadFix m
              , MonadHold t m
              , PostBuild t m
-             ) => m (Dynamic t SpellSearch)
+             ) => m (Dynamic t SpellQuery)
 searchBox = E.divC "control" $ do
     search_text <- E.divC "field" $ Bulma.textInput "Search"
     let classes = Map.fromList ((\cl -> (Just cl, showT cl)) <$> filter isSpellCaster enumAll)
@@ -141,7 +146,7 @@ searchBox = E.divC "control" $ do
         lbl' "max level"
         maxL <- numberInput' Nothing
         return (minL, maxL)
-    return $ SpellSearch
+    return $ SpellQuery
         <$> search_text
         <*> _dropdown_value cl
         <*> (fmap . fmap) SpellLevel minLevel
