@@ -38,6 +38,7 @@ module Data.CharacterSheet
     , blankSkill
     , chHealth
     , d -- single die
+    , enumAll
     , highestFaceValue
     , initiative'
     , isSpellCaster
@@ -385,6 +386,10 @@ instance Fmt Target where
 
 -- Spell set for prepared casters
 type PrepSet = Map Spell Int
+
+enumAll :: (Enum e) => [e]
+enumAll = [toEnum 0 ..]
+
 
 -- Defines a spell that can be cast
 data Spell = Spell

@@ -152,9 +152,6 @@ searchBox = E.divC "control" $ do
         <*> (fmap . fmap) SpellLevel minLevel
         <*> (fmap . fmap) SpellLevel maxLevel
 
-enumAll :: (Enum e) => [e]
-enumAll = [toEnum 0 ..]
-
 -- POST a JSON request for a spell list
 spellRequest :: SpellSearch -> XhrRequest Text
 spellRequest s = postJson "api/spelllist" s

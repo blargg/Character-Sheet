@@ -16,15 +16,16 @@
 module Backend.Database
     ( countPages
     , createDatabase
-    , insertSpell
     , migrateAll
     , searchSpells
+    , toSpellRow
+    , fromSpellRow
     ) where
 
 import Control.Monad.Reader
-import Data.Map as Map (Map)
+import Data.Foldable (foldl1)
+import Data.Maybe (mapMaybe)
 import qualified Data.Map as Map
-import qualified Data.Map.Strict as MapStrict
 import Data.Set (Set)
 import Data.Text (Text)
 import Data.CharacterSheet hiding (name)
@@ -33,6 +34,7 @@ import Backend.Orphans
 import Database.Esqueleto
 import Database.Persist.TH
 import Common.Api
+import Common.Prelude
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 SpellRow
@@ -46,23 +48,20 @@ SpellRow
     resist Bool
     target Text
     deriving Show
-SpellLevelRow
-    spellId SpellRowId
-    className Class
-    spellLevel SpellLevel
-    deriving Show
+    bardLvl SpellLevel Maybe
+    clericLvl SpellLevel Maybe
+    druidLvl SpellLevel Maybe
+    paladinLvl SpellLevel Maybe
+    rangerLvl SpellLevel Maybe
+    sorcererLvl SpellLevel Maybe
+    wizardLvl SpellLevel Maybe
 |]
 
 createDatabase :: (MonadIO m) => [Spell] -> ReaderT SqlBackend m ()
 createDatabase spells = do
     runMigration migrateAll
-    mapM_ insertSpell spells
+    mapM_ (insert . toSpellRow) spells
     return ()
-
-insertSpell :: (MonadIO m) => Spell -> ReaderT SqlBackend m ()
-insertSpell sp@Spell{spellLevel = spellLevel} = do
-    spellId <- insert $ toSpellRow sp
-    mapM_ insert $ (\(c, l) -> SpellLevelRow spellId c l) <$> toList spellLevel
 
 toSpellRow :: Spell -> SpellRow
 toSpellRow Spell{..} = SpellRow { spellRowName = spellName
@@ -74,6 +73,13 @@ toSpellRow Spell{..} = SpellRow { spellRowName = spellName
                                 , spellRowSavingThrow = savingThrow
                                 , spellRowResist = spellResist
                                 , spellRowTarget = target
+                                , spellRowBardLvl = Map.lookup Bard $ toMap spellLevel
+                                , spellRowClericLvl = Map.lookup Cleric $ toMap spellLevel
+                                , spellRowDruidLvl = Map.lookup Druid $ toMap spellLevel
+                                , spellRowPaladinLvl = Map.lookup Paladin $ toMap spellLevel
+                                , spellRowRangerLvl = Map.lookup Ranger $ toMap spellLevel
+                                , spellRowSorcererLvl = Map.lookup Sorcerer $ toMap spellLevel
+                                , spellRowWizardLvl = Map.lookup Wizard $ toMap spellLevel
                                 }
 
 fromSpellRow :: SpellRow -> Spell
@@ -86,6 +92,13 @@ fromSpellRow SpellRow { spellRowName
                       , spellRowSavingThrow
                       , spellRowResist
                       , spellRowTarget
+                      , spellRowBardLvl
+                      , spellRowClericLvl
+                      , spellRowDruidLvl
+                      , spellRowPaladinLvl
+                      , spellRowRangerLvl
+                      , spellRowSorcererLvl
+                      , spellRowWizardLvl
                       } = Spell { spellName = spellRowName
                                 , castTime = spellRowCastTime
                                 , description = spellRowDescription
@@ -93,38 +106,29 @@ fromSpellRow SpellRow { spellRowName
                                 , duration = spellRowDuration
                                 , range = spellRowRange
                                 , savingThrow = spellRowSavingThrow
-                                , spellLevel = SpellLevelList mempty
+                                , spellLevel = SpellLevelList $
+                                    toMap Bard spellRowBardLvl
+                                 <> toMap Cleric spellRowClericLvl
+                                 <> toMap Druid spellRowDruidLvl
+                                 <> toMap Paladin spellRowPaladinLvl
+                                 <> toMap Ranger spellRowRangerLvl
+                                 <> toMap Sorcerer spellRowSorcererLvl
+                                 <> toMap Wizard spellRowWizardLvl
                                 , spellResist = spellRowResist
                                 , target = spellRowTarget
                                 }
+                                    where toMap cl (Just lvl) = cl =: lvl
+                                          toMap _ Nothing = Map.empty
 
-joinSpell :: SpellRow -> [SpellLevelRow] -> Spell
-joinSpell sp spLvls = (fromSpellRow sp){spellLevel = levels}
-    where levels = SpellLevelList (Map.fromList levelList)
-          levelList = mkTuple <$> spLvls
-          mkTuple sl = (spellLevelRowClassName sl, spellLevelRowSpellLevel sl)
-
-joinSpells :: [(Entity SpellRow, Entity SpellLevelRow)] -> [Spell]
-joinSpells list = fmap snd . Map.toList $ Map.intersectionWith joinSpell srById lvlById
-    where srById = Map.fromList $ fmap (\(sr, _) -> (entityKey sr, entityVal sr)) list
-          lvlById = totalFreq $ fmap (\(_, sl) -> (spellLevelRowSpellId . entityVal $ sl, [entityVal sl])) list
-
--- counts occurences of a with weighted frequency b
-totalFreq :: (Ord a, Monoid b) => [(a, b)] -> Map a b
-totalFreq list = foldl insertPair Map.empty list
-    where insertPair m (key, value) = MapStrict.insertWith (<>) key value m
-
--- searchSpells :: (MonadIO m) => SpellSearch -> ReaderT SqlBackend m [(Entity SpellRow, Entity SpellLevelRow)]
 searchSpells :: (MonadIO m) => SpellSearch -> ReaderT SqlBackend m [Spell]
 searchSpells spSearch =
-    fmap joinSpells $
+    (fmap . fmap) (fromSpellRow . entityVal) $
     select $
-    from $ \(sp `InnerJoin` spLvl) -> do
-        on (sp ^. SpellRowId ==. spLvl ^. SpellLevelRowSpellId)
-        filterSpells spSearch sp spLvl
+    from $ \sp -> do
+        filterSpells (query spSearch) sp
         limit spellsPerPage
         offset $ (fromIntegral (page spSearch - 1)) * spellsPerPage
-        return (sp, spLvl)
+        return sp
 
 spellsPerPage :: (Num a) => a
 spellsPerPage = 10
@@ -137,24 +141,47 @@ countPages spSearch = do
 countSpellRows' :: (MonadIO m) => SpellSearch -> ReaderT SqlBackend m [Value Int]
 countSpellRows' spSearch =
     select $
-    from $ \(sp `InnerJoin` spLvl) -> do
-        on (sp ^. SpellRowId ==. spLvl ^. SpellLevelRowSpellId)
-        filterSpells spSearch sp spLvl
+    from $ \sp -> do
+        filterSpells (query spSearch) sp
         return countRows :: SqlQuery (SqlExpr (Value Int))
 
-filterSpells :: SpellSearch
+filterSpells :: SpellQuery
              -> SqlExpr (Entity SpellRow)
-             -> SqlExpr (Entity SpellLevelRow)
              -> SqlQuery ()
-filterSpells (PagedSearch (SpellQuery{ prefix, searchClass, minLevel, maxLevel }) page) sp spLvl = do
+filterSpells SpellQuery{ prefix, searchClass, minLevel, maxLevel } sp = do
     let qPrefix = prefix <> "%"
     where_ (sp ^. SpellRowName `like` val qPrefix)
-    case searchClass of
-      Just cl -> where_ (spLvl ^. SpellLevelRowClassName ==. val cl)
+    case (classColumn =<< searchClass) of
+      Just clColumn -> where_ . not_ . isNothing $ sp ^. clColumn
       Nothing -> return ()
-    case minLevel of
-      Just minL -> where_ (spLvl ^. SpellLevelRowSpellLevel >=. val minL)
-      Nothing -> return()
-    case maxLevel of
-      Just maxL -> where_ (spLvl ^. SpellLevelRowSpellLevel <=. val maxL)
-      Nothing -> return()
+    let cls = case searchClass of
+                Just cl -> [cl]
+                Nothing -> enumAll
+    let clCols = mapMaybe classColumn cls
+    case (clCols, minLevel) of
+      (_:_, Just minLvl) ->
+          where_ $
+          foldl1 (||.) $
+          fmap (\clCol -> (sp ^. clCol) >=. val (Just minLvl)) $
+          clCols
+      (_, Nothing) -> return ()
+      ([], _) -> return ()
+    case (clCols, maxLevel) of
+      (_:_, Just maxLvl) ->
+          where_ $
+          foldl1 (||.) $
+          fmap (\clCol -> (sp ^. clCol) <=. val (Just maxLvl)) $
+          clCols
+      (_, Nothing) -> return ()
+      ([], _) -> return ()
+
+-- gets the column for the specified class
+classColumn :: Class -> Maybe (EntityField SpellRow (Maybe SpellLevel))
+classColumn Bard = Just SpellRowBardLvl
+classColumn Cleric = Just SpellRowClericLvl
+classColumn Druid = Just SpellRowDruidLvl
+classColumn Paladin = Just SpellRowPaladinLvl
+classColumn Ranger = Just SpellRowRangerLvl
+classColumn Sorcerer = Just SpellRowSorcererLvl
+classColumn Wizard = Just SpellRowWizardLvl
+classColumn _ = Nothing

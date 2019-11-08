@@ -105,4 +105,4 @@ main = do
           Left err -> liftIO $ putStrLn err
           Right (_, v) -> do
               V.forM_ v $ \p ->
-                  insertSpell (fromCsv p)
+                  insert (toSpellRow $ fromCsv p)
