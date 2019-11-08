@@ -71,6 +71,7 @@ fromCsv SpellCsv{..} =
                             <> set_exists somatic CS.Somatic
                             <> set_exists divine_focus CS.DivineFocus
                             <> set_exists material CS.Material
+                            <> set_exists verbal CS.Verbal
              }
                  where set_exists 1 v = Set.singleton v
                        set_exists 0 _ = Set.empty
