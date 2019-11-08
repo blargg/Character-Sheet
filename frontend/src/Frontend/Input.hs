@@ -10,10 +10,11 @@ module Frontend.Input
     , collapseSection
     , buttonC
     , editSpan
-    , percentageInput
+    , listWidget
     , multiLineWidget
     , numberInput
     , numberInput'
+    , percentageInput
     , expandCollapseButton
     , expandCollapseText
     ) where
@@ -36,6 +37,7 @@ import Obelisk.Generated.Static
 import Frontend.Prelude
 import Frontend.Javascript
 import Frontend.Bulma as Bulma
+import Frontend.Layout (row)
 
 -- Editable percentage. Allows for percentages over 100%
 percentageInput :: (DomBuilder t m) => Percentage -> m (Dynamic t (Maybe Percentage))
@@ -156,6 +158,22 @@ collapseSection isClosed = elDynAttr "div" dynAttrs
     where attrs Closed = "style" =: "display: none"
           attrs Open = mempty
           dynAttrs = fmap attrs isClosed
+
+listWidget :: (AppWidget t m)
+           => [a]
+           -> a
+           -> (a -> m (Dynamic t a))
+           -> m (Dynamic t [a])
+listWidget initList newLine mkWidget = do
+    dynMap <- multiLineWidget (mkMap initList) newLine mkWidgetWithDelete
+    return $ snd <$$> Map.toList <$> joinDynThroughMap dynMap
+        where enumerate = zip [0..]
+              mkMap :: [a] -> Map Int a
+              mkMap = Map.fromList . enumerate
+              mkWidgetWithDelete x = row $ do
+                  v <- mkWidget x
+                  d <- Bulma.delete
+                  return (v, d)
 
 multiLineWidget :: forall t m a. (AppWidget t m)
                 => Map Int a

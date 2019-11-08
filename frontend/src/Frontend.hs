@@ -225,10 +225,15 @@ initiativeBlock' abl mbonus = statBlock "Initiative" . grid $ mdo
 attacksBlock :: AppWidget t m => m ()
 attacksBlock = () <$ stashValue K.Attacks attacksBlock'
 
-attacksBlock' :: (DomBuilder t m) => Maybe Attack -> m (Dynamic t Attack)
+attacksBlock' :: AppWidget t m => Maybe [Attack] -> m (Dynamic t [Attack])
 attacksBlock' initAttacks = statBlock "Attacks" . grid $ do
     row $ lbl "name" >> lbl "roll" >> lbl "attack bonus"
-    let attks = fromMaybe blankAttack initAttacks
+    let attks = fromMaybe [blankAttack] initAttacks
+    listWidget attks blankAttack attackRow
+        where blankAttack = nmd "" (AttackStats 0 (d 6) 0)
+
+attackRow :: (DomBuilder t m) => Attack -> m (Dynamic t Attack)
+attackRow attks = do
     let initStats = inner attks
     nameEl <- cell . inputElement $ def &
         inputElementConfig_initialValue .~ (name attks)
@@ -240,7 +245,6 @@ attacksBlock' initAttacks = statBlock "Attacks" . grid $ do
     atkBonus <- cell $ fromMaybe 0 <$$> numberInput (attackBonus initStats)
     let dStats = AttackStats <$> numDice <*> diceValue <*> atkBonus
     return $ nmd <$> value nameEl <*> dStats
-        where blankAttack = nmd "" (AttackStats 0 (d 6) 0)
 
 skillsBlock :: AppWidget t m
                => Dynamic t (Abilities Int) -> M.Map Text Ability -> m (Dynamic t (M.Map Text Skill))
