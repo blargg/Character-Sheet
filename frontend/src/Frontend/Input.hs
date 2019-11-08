@@ -11,6 +11,7 @@ module Frontend.Input
     , buttonC
     , editSpan
     , percentageInput
+    , multiLineWidget
     , numberInput
     , numberInput'
     , expandCollapseButton
@@ -21,6 +22,8 @@ import Common.Compose
 import Control.Lens
 import Control.Monad.Fix
 import Data.CharacterSheet (Percentage(..))
+import Data.Map (Map)
+import qualified Data.Map as Map
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Maybe (fromMaybe)
@@ -32,6 +35,7 @@ import Obelisk.Generated.Static
 
 import Frontend.Prelude
 import Frontend.Javascript
+import Frontend.Bulma as Bulma
 
 -- Editable percentage. Allows for percentages over 100%
 percentageInput :: (DomBuilder t m) => Percentage -> m (Dynamic t (Maybe Percentage))
@@ -152,3 +156,40 @@ collapseSection isClosed = elDynAttr "div" dynAttrs
     where attrs Closed = "style" =: "display: none"
           attrs Open = mempty
           dynAttrs = fmap attrs isClosed
+
+multiLineWidget :: forall t m a. (AppWidget t m)
+                => Map Int a
+                -> a
+                -> (a -> m (Dynamic t a, (Event t ())))
+                -> m (Dynamic t (Map Int (Dynamic t a)))
+multiLineWidget initVal newLine lineWidget = mdo
+    lineDyn <- listWithKeyShallowDiff initVal updates (keyedRow lineWidget)
+        :: m (Dynamic t (Map Int (Dynamic t a, Event t Int)))
+    addPressed <- el "div" $ Bulma.buttonPrimary "New" :: m (Event t ())
+    let addLines :: Event t (Map Int (Maybe a))
+        addLines = attachWith (\m _ -> nextKey m =: Just newLine) (current lineDyn) addPressed
+    let removeLines :: Event t (Map Int (Maybe a))
+        removeLines = (\k -> k =: Nothing) <$> removeEvents lineDyn
+    let updates :: Event t (Map Int (Maybe a))
+        updates = (addLines <> removeLines)
+    return $ (fmap . fmap) fst $ lineDyn
+    where removeEvents :: forall t' b. (Reflex t')
+                       => Dynamic t' (Map Int (b, Event t' Int))
+                       -> (Event t' Int)
+          removeEvents x = switchPromptlyDyn $ leftmost . fmap (snd . snd) . Map.toList <$> x
+
+keyedRow :: (AppWidget t m)
+         => (a -> m (Dynamic t a, Event t ())) -> Int -> a -> Event t a -> m (Dynamic t a, Event t Int)
+keyedRow mkWidget key initVal _ = do
+    (x, remove) <- mkWidget initVal
+    return (x, key <$ remove)
+
+nextKey :: (Num k) => Map k a -> k
+nextKey = (1+) . fromMaybe 0 . maxKey
+
+maxKey :: Map k a -> Maybe k
+maxKey = fmap fst . lookupMax
+
+lookupMax :: Map k a -> Maybe (k, a)
+lookupMax m | Map.null m = Nothing
+            | otherwise = Just (Map.findMax m)
