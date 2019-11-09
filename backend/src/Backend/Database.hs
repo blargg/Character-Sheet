@@ -15,6 +15,7 @@
 
 module Backend.Database
     ( countPages
+    , classColumn
     , createDatabase
     , migrateAll
     , searchSpells

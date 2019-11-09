@@ -359,7 +359,7 @@ data Class = Bard
            | Rogue
            | Sorcerer
            | Wizard
-           deriving (Eq, Enum, Ord, Show, Read, Generic, ToJSON, FromJSON, ToJSONKey, FromJSONKey)
+           deriving (Eq, Bounded, Enum, Ord, Show, Read, Generic, ToJSON, FromJSON, ToJSONKey, FromJSONKey)
 
 isSpellCaster :: Class -> Bool
 isSpellCaster Bard = True

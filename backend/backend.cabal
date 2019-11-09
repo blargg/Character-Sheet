@@ -39,3 +39,11 @@ executable backend
                , frontend
                , obelisk-backend
                , obelisk-route
+
+Test-Suite test-common
+    type: exitcode-stdio-1.0
+    main-is: tests/main.hs
+    build-depends: base
+                 , backend
+                 , common
+                 , hedgehog
