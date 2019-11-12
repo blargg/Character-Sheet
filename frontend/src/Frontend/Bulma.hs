@@ -12,18 +12,22 @@ module Frontend.Bulma
     , delete
     , hr
     , indeterminateProgress
+    , level
+    , levelItem
+    , levelLeft
+    , levelRight
+    , navItem
+    , navMenu
+    , navStart
+    , navbar
     , pagination
+    , subtitle
     , tabs
     , textInput
     , title
     , title'
     , titleClass
     , titleClass'
-    , subtitle
-    , navItem
-    , navbar
-    , navMenu
-    , navStart
     ) where
 
 import Control.Lens hiding (Bifunctor, bimap, universe, element)
@@ -55,21 +59,21 @@ textInput placeholder = do
             elConf = inputElementConfig_elementConfig . elementConfig_initialAttributes
 
 title :: (DomBuilder t m) => Int -> Text -> m ()
-title level s = title' level (text s)
+title lvl s = title' lvl (text s)
 
 title' :: (DomBuilder t m) => Int -> m a -> m a
 title' = titleClass' ""
 
 titleClass :: (DomBuilder t m) => Text -> Int -> Text -> m ()
-titleClass cl level s = titleClass' cl level (text s)
+titleClass cl lvl s = titleClass' cl lvl (text s)
 
 titleClass' :: (DomBuilder t m) => Text -> Int -> m a -> m a
-titleClass' cl level inner = elClass ("h" <> l) (apText ("title is-" <> l) cl) $ inner
-    where l = Text.pack (show level)
+titleClass' cl lvl inner = elClass ("h" <> l) (apText ("title is-" <> l) cl) $ inner
+    where l = Text.pack (show lvl)
 
 subtitle :: (DomBuilder t m) => Int -> Text -> m ()
-subtitle level s = elClass ("h" <> l) ("subtitle is-" <> l) $ text s
-    where l = Text.pack (show level)
+subtitle lvl s = elClass ("h" <> l) ("subtitle is-" <> l) $ text s
+    where l = Text.pack (show lvl)
 
 buttonPrimary :: (DomBuilder t m) => Text -> m (Event t ())
 buttonPrimary = buttonClass "is-primary"
@@ -103,6 +107,19 @@ apText t s = t <> " " <> s
 
 indeterminateProgress :: (DomBuilder t m) => m ()
 indeterminateProgress = elAttr "progress" ("class" =:"progress is-small is-primary" <> "max" =: "100") $ text "10%"
+
+level :: (DomBuilder t m) => m a -> m a
+level = elClass "div" "level"
+
+levelLeft :: (DomBuilder t m) => m a -> m a
+levelLeft = elClass "div" "level-left"
+
+levelRight :: (DomBuilder t m) => m a -> m a
+levelRight = elClass "div" "level-right"
+
+
+levelItem :: (DomBuilder t m) => m a -> m a
+levelItem = elClass "p" "level-item"
 
 navItem ::
      ( DomBuilder t m

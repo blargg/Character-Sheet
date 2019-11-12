@@ -11,6 +11,7 @@ module Frontend.Spells
     ( spells_page
     ) where
 
+import Control.Monad (join)
 import Data.CharacterSheet
 import qualified Data.List as List
 import Data.Map (Map)
@@ -113,20 +114,33 @@ prepedSpell sp remaining = do
 saved_spell_sets :: AppWidget t m => Dynamic t PrepSet -> m (Event t PrepSet)
 saved_spell_sets prepared = Bulma.cardClass "page top-margin" $ do
     Bulma.title 3 "Saved Spell Sets"
-    prepEv <- saved_set (current prepared) "Spell Set 1"
-    return prepEv
+    initialSaved <- fromMaybe emptyList <$> Storage.loadJson Storage.SpellSets
+    dynRs <- listWidget' initialSaved newSpellSet (saved_set (current prepared))
+    let prepSets = join $ fmap (fst) dynRs
+    Storage.saveDyn Storage.SpellSets prepSets
+    let prepEvs = switchDyn $ fmap (snd) dynRs
+    return (fmap head prepEvs)
+        where emptyList = [ newSpellSet ]
+              newSpellSet = nmd "New Spell Set" Map.empty
 
-saved_set :: AppWidget t m => Behavior t PrepSet -> Text -> m (Event t PrepSet)
-saved_set currentPreped setName = do
-    E.div $ text setName
-    (prepEv, saveEv) <- E.divC "field is-grouped" $ do
-        prepEv' <- E.divC "control" $ Bulma.buttonPrimary "Prep"
-        saveEv' <- E.divC "control" $ Bulma.button "Save"
-        return (prepEv', saveEv')
-    initialSaved <- fromMaybe Map.empty <$> Storage.loadJson Storage.SpellSets
-    savedSet <- holdDyn initialSaved (tag currentPreped saveEv)
-    Storage.saveDyn Storage.SpellSets savedSet
-    return $ tag (current savedSet) prepEv
+saved_set :: AppWidget t m
+          => Behavior t PrepSet
+          -> Nmd PrepSet
+          -> m ((Dynamic t [Nmd PrepSet], Event t [PrepSet]), Event t ())
+saved_set currentPreped initialSaved = Bulma.level $ do
+    dynName <- Bulma.levelLeft . Bulma.levelItem $ textSimple (name initialSaved)
+    (prepEv, saveEv, delEv) <- Bulma.levelRight $ do
+        prepEv' <- Bulma.levelItem $ Bulma.buttonPrimary "Prep"
+        saveEv' <- Bulma.levelItem $ Bulma.button "Save"
+        delEv' <- Bulma.levelItem $ Bulma.button "Delete"
+        return (prepEv', saveEv', delEv')
+    savedSet <- holdDyn (inner initialSaved) (tag currentPreped saveEv)
+    let setWithName = nmd <$> dynName <*> savedSet
+    let prepEvents = tag (current savedSet) prepEv
+    return ((fSingle setWithName, fSingle prepEvents), delEv)
+
+fSingle :: (Functor f) => f a -> f [a]
+fSingle = fmap (\x -> [x])
 
 searchBox :: ( DomBuilder t m
              , MonadFix m

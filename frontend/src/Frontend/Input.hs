@@ -11,12 +11,14 @@ module Frontend.Input
     , buttonC
     , editSpan
     , listWidget
+    , listWidget'
     , multiLineWidget
     , numberInput
     , numberInput'
     , percentageInput
     , expandCollapseButton
     , expandCollapseText
+    , textSimple
     ) where
 
 import Common.Compose
@@ -73,6 +75,14 @@ parseInput :: (DomBuilder t m)
 parseInput parse config = do
     textValue <- inputElement config
     return $ fmap parse $ value textValue
+
+textSimple :: (DomBuilder t m)
+          => T.Text
+          -> m (Dynamic t T.Text)
+textSimple initVal = do
+    let config = def & inputElementConfig_initialValue .~ initVal
+    textValue <- inputElement config
+    return $ value textValue
 
 -- A span that a user can edit in place (using contenteditable = true)
 editSpan :: ( DomBuilder t m
@@ -164,16 +174,23 @@ listWidget :: (AppWidget t m, Monoid b)
            -> a
            -> (a -> m b)
            -> m (Dynamic t b)
-listWidget initList newLine mkWidget = do
-    dynMap <- multiLineWidget (mkMap initList) newLine mkWidgetWithDelete
+listWidget initList newLine mkWidget = listWidget' initList newLine mkWidgetWithDelete
+    where mkWidgetWithDelete x = row $ do
+              v <- mkWidget x
+              d <- Bulma.delete
+              return (v, d)
+
+listWidget' :: (AppWidget t m, Monoid b)
+           => [a]
+           -> a
+           -> (a -> m (b, Event t ()))
+           -> m (Dynamic t b)
+listWidget' initList newLine mkWidget = do
+    dynMap <- multiLineWidget (mkMap initList) newLine mkWidget
     return . fmap mconcat $ snd <$$> Map.toList <$> dynMap
         where enumerate = zip [0..]
               mkMap :: [a] -> Map Int a
               mkMap = Map.fromList . enumerate
-              mkWidgetWithDelete x = row $ do
-                  v <- mkWidget x
-                  d <- Bulma.delete
-                  return (v, d)
 
 multiLineWidget :: forall t m a b. (AppWidget t m)
                 => Map Int a
