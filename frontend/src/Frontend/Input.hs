@@ -159,14 +159,14 @@ collapseSection isClosed = elDynAttr "div" dynAttrs
           attrs Open = mempty
           dynAttrs = fmap attrs isClosed
 
-listWidget :: (AppWidget t m)
+listWidget :: (AppWidget t m, Monoid b)
            => [a]
            -> a
-           -> (a -> m (Dynamic t a))
-           -> m (Dynamic t [a])
+           -> (a -> m b)
+           -> m (Dynamic t b)
 listWidget initList newLine mkWidget = do
     dynMap <- multiLineWidget (mkMap initList) newLine mkWidgetWithDelete
-    return $ snd <$$> Map.toList <$> joinDynThroughMap dynMap
+    return . fmap mconcat $ snd <$$> Map.toList <$> dynMap
         where enumerate = zip [0..]
               mkMap :: [a] -> Map Int a
               mkMap = Map.fromList . enumerate
@@ -175,14 +175,14 @@ listWidget initList newLine mkWidget = do
                   d <- Bulma.delete
                   return (v, d)
 
-multiLineWidget :: forall t m a. (AppWidget t m)
+multiLineWidget :: forall t m a b. (AppWidget t m)
                 => Map Int a
                 -> a
-                -> (a -> m (Dynamic t a, (Event t ())))
-                -> m (Dynamic t (Map Int (Dynamic t a)))
+                -> (a -> m (b, (Event t ())))
+                -> m (Dynamic t (Map Int b))
 multiLineWidget initVal newLine lineWidget = mdo
     lineDyn <- listWithKeyShallowDiff initVal updates (keyedRow lineWidget)
-        :: m (Dynamic t (Map Int (Dynamic t a, Event t Int)))
+        :: m (Dynamic t (Map Int (b, Event t Int)))
     addPressed <- el "div" $ Bulma.buttonPrimary "New" :: m (Event t ())
     let addLines :: Event t (Map Int (Maybe a))
         addLines = attachWith (\m _ -> nextKey m =: Just newLine) (current lineDyn) addPressed
@@ -191,13 +191,13 @@ multiLineWidget initVal newLine lineWidget = mdo
     let updates :: Event t (Map Int (Maybe a))
         updates = (addLines <> removeLines)
     return $ (fmap . fmap) fst $ lineDyn
-    where removeEvents :: forall t' b. (Reflex t')
-                       => Dynamic t' (Map Int (b, Event t' Int))
+    where removeEvents :: forall t' b'. (Reflex t')
+                       => Dynamic t' (Map Int (b', Event t' Int))
                        -> (Event t' Int)
           removeEvents x = switchPromptlyDyn $ leftmost . fmap (snd . snd) . Map.toList <$> x
 
 keyedRow :: (AppWidget t m)
-         => (a -> m (Dynamic t a, Event t ())) -> Int -> a -> Event t a -> m (Dynamic t a, Event t Int)
+         => (a -> m (b, Event t ())) -> Int -> a -> Event t a -> m (b, Event t Int)
 keyedRow mkWidget key initVal _ = do
     (x, remove) <- mkWidget initVal
     return (x, key <$ remove)

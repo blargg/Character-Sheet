@@ -7,6 +7,7 @@
 {-# LANGUAGE TypeApplications #-}
 module Frontend (frontend) where
 
+import Control.Monad (join)
 import Control.Monad.Fix
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -229,8 +230,9 @@ attacksBlock' :: AppWidget t m => Maybe [Attack] -> m (Dynamic t [Attack])
 attacksBlock' initAttacks = statBlock "Attacks" . grid $ do
     row $ lbl "name" >> lbl "roll" >> lbl "attack bonus"
     let attks = fromMaybe [blankAttack] initAttacks
-    listWidget attks blankAttack attackRow
+    join <$> listWidget attks blankAttack attackRowList
         where blankAttack = nmd "" (AttackStats 0 (d 6) 0)
+              attackRowList atk = (\x -> [x]) <$$> attackRow atk
 
 attackRow :: (DomBuilder t m) => Attack -> m (Dynamic t Attack)
 attackRow attks = do
