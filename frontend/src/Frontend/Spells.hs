@@ -155,10 +155,10 @@ searchBox = E.divC "control" $ do
     cl <- E.divC "field" $ elClass "div" "select" $ dropdown Nothing (pure classes) def
     (minLevel, maxLevel) <- E.divC "field" $ do
         lbl' "min level"
-        minL <- numberInput' Nothing
+        minL <- numberInput' noValue
         space'
         lbl' "max level"
-        maxL <- numberInput' Nothing
+        maxL <- numberInput' noValue
         return (minL, maxL)
     return $ SpellQuery
         <$> search_text

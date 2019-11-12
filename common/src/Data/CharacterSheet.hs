@@ -20,6 +20,7 @@ module Data.CharacterSheet
     , Die
     , Fmt(..)
     , GameDuration(..)
+    , Inventory(..)
     , Named(..)
     , Nmd
     , Percentage(..)
@@ -404,6 +405,11 @@ data Spell = Spell
     , spellResist :: Bool
     , target :: Text
     }
+    deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON, FromJSONKey, ToJSONKey)
+
+data Inventory a = Inventory { goldPieces :: a
+                             , inventoryItems :: [Text]
+                             }
     deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON, FromJSONKey, ToJSONKey)
 
 pathfinderSkills :: Map Text Ability

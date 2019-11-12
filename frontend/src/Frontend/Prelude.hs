@@ -5,10 +5,12 @@ module Frontend.Prelude
     ( AppWidget
     , Attr
     , classAttr
+    , join
     , module Common.Prelude
     , module Control.Monad.Fix
     ) where
 
+import Control.Monad (join)
 import Data.Map (Map)
 import Data.Text (Text)
 import Reflex.Dom.Core

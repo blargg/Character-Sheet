@@ -35,6 +35,7 @@ data StorageKey = Abilities
                 | Initiative
                 | PreparedSpells
                 | SpellSets
+                | Inventory
                 deriving (Show)
 
 loadJson :: (FromJSON a, MonadJSM m) => StorageKey -> m (Maybe a)

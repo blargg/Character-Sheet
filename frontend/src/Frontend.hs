@@ -29,6 +29,7 @@ import qualified Frontend.About as About
 import qualified Frontend.Elements as E
 import qualified Frontend.Bulma as Bulma
 import qualified Frontend.License as License
+import qualified Frontend.Inventory as Inventory
 
 import Frontend.Prelude
 import Obelisk.Route.Frontend
@@ -91,6 +92,7 @@ sheet_body =
     Bulma.tabs $
     (1 :: Int) =: ("Stats", stat_page)
     <> 2 =: ("Spells", spells_page)
+    <> 3 =: ("Inventory", Inventory.main)
 
 -- displays before the page is fully loaded and rendered
 loading_page :: (DomBuilder t m) => m ()

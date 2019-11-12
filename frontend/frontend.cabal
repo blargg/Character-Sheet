@@ -29,6 +29,7 @@ library
     Frontend.Armor
     Frontend.Bulma
     Frontend.Elements
+    Frontend.Inventory
     Frontend.Javascript
     Frontend.License
     Frontend.Prelude

@@ -7,18 +7,21 @@
 {-# LANGUAGE TypeApplications #-}
 module Frontend.Input
     ( Closed(..)
+    , NumberConfig(..)
     , collapseSection
     , buttonC
     , editSpan
     , listWidget
     , listWidget'
     , multiLineWidget
+    , noValue
     , numberInput
     , numberInput'
     , percentageInput
     , expandCollapseButton
     , expandCollapseText
     , textSimple
+    , simpleConfig
     ) where
 
 import Common.Compose
@@ -50,17 +53,38 @@ numberInput :: ( Read a
                , DomBuilder t m
                )
                => a -> m (Dynamic t (Maybe a))
-numberInput = numberInput' . Just
+numberInput = numberInput' . fromInitalValue
+
+fromInitalValue :: a -> NumberConfig a
+fromInitalValue x = NumberConfig { numberVal = Just x
+                                 , cssClass = "numberInput num"
+                                 }
+
+simpleConfig :: Maybe a -> NumberConfig a
+simpleConfig x = NumberConfig { numberVal = x
+                              , cssClass = "numberInput num"
+                              }
+
+noValue :: NumberConfig a
+noValue = NumberConfig { numberVal = Nothing
+                       , cssClass = "numberInput num"
+                       }
+
+data NumberConfig a = NumberConfig { numberVal :: Maybe a
+                                   , cssClass :: Text
+                                   }
 
 -- like number input, but allows empty initial value
 numberInput' :: ( Read a
                , Show a
                , DomBuilder t m
                )
-               => Maybe a -> m (Dynamic t (Maybe a))
-numberInput' initialVal = parseInput parse numberConfig
+               => NumberConfig a -> m (Dynamic t (Maybe a))
+numberInput' conf = parseInput parse numberConfig
     where
-        numberConfig = def & elConf .~ (  classAttr "numberInput num"
+        initialVal = numberVal conf
+        cl = cssClass conf
+        numberConfig = def & elConf .~ (  classAttr cl
                                        <> "type" =: "number")
                            & inputElementConfig_initialValue
                              .~ (T.pack . maybe "" show $ initialVal)

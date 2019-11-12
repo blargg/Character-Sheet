@@ -84,7 +84,7 @@ armorRow initialVal = row $ do
         & inputElementConfig_initialValue .~ (name initialVal)
     let initArmor = inner initialVal
     armorCls <- cell $ fromMaybe 0 <$$> numberInput (armorClass initArmor)
-    maxDexB <- cell $ numberInput' (maxDexBonus initArmor)
+    maxDexB <- cell $ numberInput' (simpleConfig $ maxDexBonus initArmor)
     acp <- cell $ fromMaybe 0 <$$> numberInput (armorCheckPenalty initArmor)
     spellFail <- cell $ fromMaybe (Percentage 0) <$$> percentageInput (arcaneSpellFailChance initArmor)
     delEvent <- Bulma.delete
