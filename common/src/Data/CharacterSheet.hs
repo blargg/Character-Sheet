@@ -13,8 +13,8 @@ module Data.CharacterSheet
     , ArmorData(..)
     , Attack
     , AttackStats(..)
+    , CharacterClass(..)
     , CharacterSheet(..)
-    , Class(..)
     , ClassData(..)
     , Dice(..)
     , Die
@@ -343,26 +343,26 @@ data School = Abjuration
 newtype SpellLevel = SpellLevel Int
     deriving (Eq, Ord, Generic, ToJSON, FromJSON, Show)
 
-newtype SpellLevelList = SpellLevelList {toMap :: Map Class SpellLevel}
+newtype SpellLevelList = SpellLevelList {toMap :: Map CharacterClass SpellLevel}
     deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON)
 
-toList :: SpellLevelList -> [(Class, SpellLevel)]
+toList :: SpellLevelList -> [(CharacterClass, SpellLevel)]
 toList = M.toList . toMap
 
-data Class = Bard
-           | Barbarian
-           | Cleric
-           | Druid
-           | Fighter
-           | Monk
-           | Paladin
-           | Ranger
-           | Rogue
-           | Sorcerer
-           | Wizard
-           deriving (Eq, Bounded, Enum, Ord, Show, Read, Generic, ToJSON, FromJSON, ToJSONKey, FromJSONKey)
+data CharacterClass = Bard
+                    | Barbarian
+                    | Cleric
+                    | Druid
+                    | Fighter
+                    | Monk
+                    | Paladin
+                    | Ranger
+                    | Rogue
+                    | Sorcerer
+                    | Wizard
+                    deriving (Eq, Bounded, Enum, Ord, Show, Read, Generic, ToJSON, FromJSON, ToJSONKey, FromJSONKey)
 
-isSpellCaster :: Class -> Bool
+isSpellCaster :: CharacterClass -> Bool
 isSpellCaster Bard = True
 isSpellCaster Barbarian = False
 isSpellCaster Cleric = True

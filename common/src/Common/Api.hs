@@ -30,12 +30,12 @@ data PagedResponse a = PagedResponse { pageData :: a
 
 type SpellSearch = PagedSearch SpellQuery
 
-spellSearch :: Text -> Maybe Class -> Maybe SpellLevel -> Maybe SpellLevel -> Int -> SpellSearch
+spellSearch :: Text -> Maybe CharacterClass -> Maybe SpellLevel -> Maybe SpellLevel -> Int -> SpellSearch
 spellSearch p cl minL maxL = PagedSearch (SpellQuery p cl minL maxL)
 
 -- defines the search criteria when searching for spells
 data SpellQuery = SpellQuery { prefix :: Text
-                               , searchClass :: Maybe Class
+                               , searchClass :: Maybe CharacterClass
                                , minLevel :: Maybe SpellLevel
                                , maxLevel :: Maybe SpellLevel
                                }

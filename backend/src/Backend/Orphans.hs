@@ -39,12 +39,12 @@ instance PersistField Target where
 instance PersistFieldSql Target where
     sqlType _ = SqlInt32
 
-instance PersistField Class where
+instance PersistField CharacterClass where
     toPersistValue = PersistText . T.pack . show
     fromPersistValue (PersistText x) = Right . read . T.unpack $ x
     fromPersistValue _ = Left "PersistField.Class.fromPersistValue called on wrong data type"
 
-instance PersistFieldSql Class where
+instance PersistFieldSql CharacterClass where
     sqlType _ = SqlString
 
 instance PersistField SpellLevel where

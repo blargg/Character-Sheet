@@ -177,7 +177,7 @@ filterSpells SpellQuery{ prefix, searchClass, minLevel, maxLevel } sp = do
       ([], _) -> return ()
 
 -- gets the column for the specified class
-classColumn :: Class -> Maybe (EntityField SpellRow (Maybe SpellLevel))
+classColumn :: CharacterClass -> Maybe (EntityField SpellRow (Maybe SpellLevel))
 classColumn Bard = Just SpellRowBardLvl
 classColumn Cleric = Just SpellRowClericLvl
 classColumn Druid = Just SpellRowDruidLvl
