@@ -16,6 +16,7 @@ module Data.CharacterSheet
     , CharacterClass(..)
     , CharacterSheet(..)
     , ClassData(..)
+    , ClStats(..)
     , Dice(..)
     , Die
     , Fmt(..)
@@ -38,6 +39,7 @@ module Data.CharacterSheet
     , blankClass
     , blankSkill
     , chHealth
+    , classAndLevel
     , d -- single die
     , enumAll
     , highestFaceValue
@@ -201,23 +203,258 @@ pAdd (Percentage x) (Percentage y) = Percentage (x + y)
 showPercentage :: Percentage -> Text
 showPercentage (Percentage x) = T.pack $ show x ++ "%"
 
-data ClassData a = ClassData { className :: Text
+data ClassData a = ClassData { cdClass :: CharacterClass
                              , level :: a
-                             , bab :: a
-                             , fortitude :: a
-                             , reflex :: a
-                             , will :: a
                              , classHealth :: a
+                             , clStats :: ClStats a
                              }
                              deriving (Generic, ToJSON, FromJSON, Functor, Foldable, Traversable, Read, Show)
 
+data ClStats a = ClStats { bab :: a
+                         , fortitude :: a
+                         , reflex :: a
+                         , will :: a
+                         }
+                         deriving (Generic, ToJSON, FromJSON, Functor, Foldable, Traversable, Read, Show)
+
+classAndLevel :: CharacterClass -> Int -> ClStats Int
+classAndLevel Barbarian 1  = ClStats 1 2 0 0
+classAndLevel Barbarian 2  = ClStats 2 3 0 0
+classAndLevel Barbarian 3  = ClStats 3 3 1 1
+classAndLevel Barbarian 4  = ClStats 4 4 1 1
+classAndLevel Barbarian 5  = ClStats 5 4 1 1
+classAndLevel Barbarian 6  = ClStats 6 5 2 2
+classAndLevel Barbarian 7  = ClStats 7 5 2 2
+classAndLevel Barbarian 8  = ClStats 8 6 2 2
+classAndLevel Barbarian 9  = ClStats 9 6 3 3
+classAndLevel Barbarian 10 = ClStats 10 7 3 3
+classAndLevel Barbarian 11 = ClStats 11 7 3 3
+classAndLevel Barbarian 12 = ClStats 12 8 4 4
+classAndLevel Barbarian 13 = ClStats 13 8 4 4
+classAndLevel Barbarian 14 = ClStats 14 9 4 4
+classAndLevel Barbarian 15 = ClStats 15 9 5 5
+classAndLevel Barbarian 16 = ClStats 16 10 5 5
+classAndLevel Barbarian 17 = ClStats 17 10 5 5
+classAndLevel Barbarian 18 = ClStats 18 11 6 6
+classAndLevel Barbarian 19 = ClStats 19 11 6 6
+classAndLevel Barbarian 20 = ClStats 20 12 6 6
+
+classAndLevel Bard 1  = ClStats 0  0 2  2
+classAndLevel Bard 2  = ClStats 1  0 3  3
+classAndLevel Bard 3  = ClStats 2  1 3  3
+classAndLevel Bard 4  = ClStats 3  1 4  4
+classAndLevel Bard 5  = ClStats 3  1 4  4
+classAndLevel Bard 6  = ClStats 4  2 5  5
+classAndLevel Bard 7  = ClStats 5  2 5  5
+classAndLevel Bard 8  = ClStats 6  2 6  6
+classAndLevel Bard 9  = ClStats 6  3 6  6
+classAndLevel Bard 10 = ClStats 7  3 7  7
+classAndLevel Bard 11 = ClStats 8  3 7  7
+classAndLevel Bard 12 = ClStats 9  4 8  8
+classAndLevel Bard 13 = ClStats 9  4 8  8
+classAndLevel Bard 14 = ClStats 15 4 9  9
+classAndLevel Bard 15 = ClStats 16 5 9  9
+classAndLevel Bard 16 = ClStats 17 5 10 10
+classAndLevel Bard 17 = ClStats 17 5 10 10
+classAndLevel Bard 18 = ClStats 18 6 11 11
+classAndLevel Bard 19 = ClStats 19 6 11 11
+classAndLevel Bard 20 = ClStats 11 6 12 12
+
+classAndLevel Cleric 1  = ClStats 0 2 0 2
+classAndLevel Cleric 2  = ClStats 1 3 0 3
+classAndLevel Cleric 3  = ClStats 2 3 1 3
+classAndLevel Cleric 4  = ClStats 3 4 1 4
+classAndLevel Cleric 5  = ClStats 3 4 1 4
+classAndLevel Cleric 6  = ClStats 4 5 2 5
+classAndLevel Cleric 7  = ClStats 5 5 2 5
+classAndLevel Cleric 8  = ClStats 6 6 2 6
+classAndLevel Cleric 9  = ClStats 6 6 3 6
+classAndLevel Cleric 10 = ClStats 7 7 3 7
+classAndLevel Cleric 11 = ClStats 8 7 3 7
+classAndLevel Cleric 12 = ClStats 9 8 4 8
+classAndLevel Cleric 13 = ClStats 9 8 4 8
+classAndLevel Cleric 14 = ClStats 10 9 4 9
+classAndLevel Cleric 15 = ClStats 11 9 5 9
+classAndLevel Cleric 16 = ClStats 12 10 5 10
+classAndLevel Cleric 17 = ClStats 12 10 5 10
+classAndLevel Cleric 18 = ClStats 13 11 6 11
+classAndLevel Cleric 19 = ClStats 14 11 6 11
+classAndLevel Cleric 20 = ClStats 15 12 6 12
+
+classAndLevel Druid 1  = ClStats  0 2 0 2
+classAndLevel Druid 2  = ClStats  1 3 0 3
+classAndLevel Druid 3  = ClStats  2 3 1 3
+classAndLevel Druid 4  = ClStats  3 4 1 4
+classAndLevel Druid 5  = ClStats  3 4 1 4
+classAndLevel Druid 6  = ClStats  4 5 2 5
+classAndLevel Druid 7  = ClStats  5 5 2 5
+classAndLevel Druid 8  = ClStats  6 6 2 6
+classAndLevel Druid 9  = ClStats  6 6 3 6
+classAndLevel Druid 10 = ClStats  7 7 3 7
+classAndLevel Druid 11 = ClStats  8 7 3 7
+classAndLevel Druid 12 = ClStats  9 8 4 8
+classAndLevel Druid 13 = ClStats  9 8 4 8
+classAndLevel Druid 14 = ClStats  10 9 4 9
+classAndLevel Druid 15 = ClStats  11 9 5 9
+classAndLevel Druid 16 = ClStats  12 10 5 10
+classAndLevel Druid 17 = ClStats  12 10 5 10
+classAndLevel Druid 18 = ClStats  13 11 6 11
+classAndLevel Druid 19 = ClStats  14 11 6 11
+classAndLevel Druid 20 = ClStats  15 12 6 12
+
+classAndLevel Fighter 1  = ClStats 1 2 0 0
+classAndLevel Fighter 2  = ClStats 2 3 0 0
+classAndLevel Fighter 3  = ClStats 3 3 1 1
+classAndLevel Fighter 4  = ClStats 4 4 1 1
+classAndLevel Fighter 5  = ClStats 5 4 1 1
+classAndLevel Fighter 6  = ClStats 6 5 2 2
+classAndLevel Fighter 7  = ClStats 7 5 2 2
+classAndLevel Fighter 8  = ClStats 8 6 2 2
+classAndLevel Fighter 9  = ClStats 9 6 3 3
+classAndLevel Fighter 10 = ClStats 10 7 3 3
+classAndLevel Fighter 11 = ClStats 11 7 3 3
+classAndLevel Fighter 12 = ClStats 12 8 4 4
+classAndLevel Fighter 13 = ClStats 13 8 4 4
+classAndLevel Fighter 14 = ClStats 14 9 4 4
+classAndLevel Fighter 15 = ClStats 15 9 5 5
+classAndLevel Fighter 16 = ClStats 16 10 5 5
+classAndLevel Fighter 17 = ClStats 17 10 5 5
+classAndLevel Fighter 18 = ClStats 18 11 6 6
+classAndLevel Fighter 19 = ClStats 19 11 6 6
+classAndLevel Fighter 20 = ClStats 20 12 6 6
+
+classAndLevel Monk 1  = ClStats 0  2   2   2
+classAndLevel Monk 2  = ClStats 1  3   3   3
+classAndLevel Monk 3  = ClStats 2  3   3   3
+classAndLevel Monk 4  = ClStats 3  4   4   4
+classAndLevel Monk 5  = ClStats 3  4   4   4
+classAndLevel Monk 6  = ClStats 4  5   5   5
+classAndLevel Monk 7  = ClStats 5  5   5   5
+classAndLevel Monk 8  = ClStats 6  6   6   6
+classAndLevel Monk 9  = ClStats 6  6   6   6
+classAndLevel Monk 10 = ClStats 7  7   7   7
+classAndLevel Monk 11 = ClStats 8  7   7   7
+classAndLevel Monk 12 = ClStats 9  8   8   8
+classAndLevel Monk 13 = ClStats 9  8   8   8
+classAndLevel Monk 14 = ClStats 10 9   9   9
+classAndLevel Monk 15 = ClStats 11 9  9   9
+classAndLevel Monk 16 = ClStats 12 10 10  10
+classAndLevel Monk 17 = ClStats 12 10 10  10
+classAndLevel Monk 18 = ClStats 13 11 11  11
+classAndLevel Monk 19 = ClStats 14 11 11  11
+classAndLevel Monk 20 = ClStats 15 12 12  12
+
+classAndLevel Paladin 1  = ClStats 1 2 0 2
+classAndLevel Paladin 2  = ClStats 2 3 0 3
+classAndLevel Paladin 3  = ClStats 3 3 1 3
+classAndLevel Paladin 4  = ClStats 4 4 1 4
+classAndLevel Paladin 5  = ClStats 5 4 1 4
+classAndLevel Paladin 6  = ClStats 6 5 2 5
+classAndLevel Paladin 7  = ClStats 7 5 2 5
+classAndLevel Paladin 8  = ClStats 8 6 2 6
+classAndLevel Paladin 9  = ClStats 9 6 3 6
+classAndLevel Paladin 10 = ClStats 10 7 3 7
+classAndLevel Paladin 11 = ClStats 11 7 3 7
+classAndLevel Paladin 12 = ClStats 12 8 4 8
+classAndLevel Paladin 13 = ClStats 13 8 4 8
+classAndLevel Paladin 14 = ClStats 14 9 4 9
+classAndLevel Paladin 15 = ClStats 15 9 5 9
+classAndLevel Paladin 16 = ClStats 16 10 5 10
+classAndLevel Paladin 17 = ClStats 17 10 5 10
+classAndLevel Paladin 18 = ClStats 18 11 6 11
+classAndLevel Paladin 19 = ClStats 19 11 6 11
+classAndLevel Paladin 20 = ClStats 20 12 6 12
+
+classAndLevel Ranger 1  = ClStats 1  2   2   0
+classAndLevel Ranger 2  = ClStats 2  3   3   0
+classAndLevel Ranger 3  = ClStats 3  3   3   1
+classAndLevel Ranger 4  = ClStats 4  4   4   1
+classAndLevel Ranger 5  = ClStats 5  4   4   1
+classAndLevel Ranger 6  = ClStats 6  5   5   2
+classAndLevel Ranger 7  = ClStats 7  5   5   2
+classAndLevel Ranger 8  = ClStats 8  6   6   2
+classAndLevel Ranger 9  = ClStats 9  6   6   3
+classAndLevel Ranger 10 = ClStats 10 7   7   3
+classAndLevel Ranger 11 = ClStats 11 7   7   3
+classAndLevel Ranger 12 = ClStats 12 8   8   4
+classAndLevel Ranger 13 = ClStats 13 8   8   4
+classAndLevel Ranger 14 = ClStats 14 9   9   4
+classAndLevel Ranger 15 = ClStats 15 9   9   5
+classAndLevel Ranger 16 = ClStats 16 10  10  5
+classAndLevel Ranger 17 = ClStats 17 10  10  5
+classAndLevel Ranger 18 = ClStats 18 11  11  6
+classAndLevel Ranger 19 = ClStats 19 11  11  6
+classAndLevel Ranger 20 = ClStats 20 12  12  6
+
+classAndLevel Rogue 1   = ClStats 0     0   2   0
+classAndLevel Rogue 2   = ClStats 1     0   3   0
+classAndLevel Rogue 3   = ClStats 2     1   3   1
+classAndLevel Rogue 4   = ClStats 3     1   4   1
+classAndLevel Rogue 5   = ClStats 3     1   4   1
+classAndLevel Rogue 6   = ClStats 4     2   5   2
+classAndLevel Rogue 7   = ClStats 5     2   5   2
+classAndLevel Rogue 8   = ClStats 6     2   6   2
+classAndLevel Rogue 9   = ClStats 6     3   6   3
+classAndLevel Rogue 10  = ClStats 7     3   7   3
+classAndLevel Rogue 11  = ClStats 8     3   7   3
+classAndLevel Rogue 12  = ClStats 9     4   8   4
+classAndLevel Rogue 13  = ClStats 9     4   8   4
+classAndLevel Rogue 14  = ClStats 10    4   9   4
+classAndLevel Rogue 15  = ClStats 11    5   9   5
+classAndLevel Rogue 16  = ClStats 12    5   10  5
+classAndLevel Rogue 17  = ClStats 12    5   10  5
+classAndLevel Rogue 18  = ClStats 13    6   11  6
+classAndLevel Rogue 19  = ClStats 14    6   11  6
+classAndLevel Rogue 20  = ClStats 15    6   12  6
+
+classAndLevel Sorcerer 1  = ClStats 0     0   0   2
+classAndLevel Sorcerer 2  = ClStats 1     0   0   3
+classAndLevel Sorcerer 3  = ClStats 1     1   1   3
+classAndLevel Sorcerer 4  = ClStats 2     1   1   4
+classAndLevel Sorcerer 5  = ClStats 2     1   1   4
+classAndLevel Sorcerer 6  = ClStats 3     2   2   5
+classAndLevel Sorcerer 7  = ClStats 3     2   2   5
+classAndLevel Sorcerer 8  = ClStats 4     2   2   6
+classAndLevel Sorcerer 9  = ClStats 4     3   3   6
+classAndLevel Sorcerer 10 = ClStats 5     3   3   7
+classAndLevel Sorcerer 11 = ClStats 5     3   3   7
+classAndLevel Sorcerer 12 = ClStats 6     4   4   8
+classAndLevel Sorcerer 13 = ClStats 6     4   4   8
+classAndLevel Sorcerer 14 = ClStats 7     4   4   9
+classAndLevel Sorcerer 15 = ClStats 7     5   5   9
+classAndLevel Sorcerer 16 = ClStats 8     5   5   10
+classAndLevel Sorcerer 17 = ClStats 8     5   5   10
+classAndLevel Sorcerer 18 = ClStats 9     6   6   11
+classAndLevel Sorcerer 19 = ClStats 9     6   6   11
+classAndLevel Sorcerer 20 = ClStats 10    6   6   12
+
+classAndLevel Wizard 1  = ClStats 0 0 0 2
+classAndLevel Wizard 2  = ClStats 1 0 0 3
+classAndLevel Wizard 3  = ClStats 1 1 1 3
+classAndLevel Wizard 4  = ClStats 2 1 1 4
+classAndLevel Wizard 5  = ClStats 2 1 1 4
+classAndLevel Wizard 6  = ClStats 3 2 2 5
+classAndLevel Wizard 7  = ClStats 3 2 2 5
+classAndLevel Wizard 8  = ClStats 4 2 2 6
+classAndLevel Wizard 9  = ClStats 4 3 3 6
+classAndLevel Wizard 10 = ClStats 5 3 3 7
+classAndLevel Wizard 11 = ClStats 5 3 3 7
+classAndLevel Wizard 12 = ClStats 6 4 4 8
+classAndLevel Wizard 13 = ClStats 6 4 4 8
+classAndLevel Wizard 14 = ClStats 7 4 4 9
+classAndLevel Wizard 15 = ClStats 7 5 5 9
+classAndLevel Wizard 16 = ClStats 8 5 5 10
+classAndLevel Wizard 17 = ClStats 8 5 5 10
+classAndLevel Wizard 18 = ClStats 9 6 6 11
+classAndLevel Wizard 19 = ClStats 9 6 6 11
+classAndLevel Wizard 20 = ClStats 10 6 6 12
+
+classAndLevel _ _ = ClStats 0 0 0 0
+
 blankClass :: ClassData Int
-blankClass = ClassData { className = ""
-                       , level = 0
-                       , bab = 0
-                       , fortitude = 0
-                       , reflex = 0
-                       , will = 0
+blankClass = ClassData { cdClass = Barbarian
+                       , level = 1
+                       , clStats = classAndLevel Barbarian 1
                        , classHealth = 0
                        }
 
@@ -349,8 +586,8 @@ newtype SpellLevelList = SpellLevelList {toMap :: Map CharacterClass SpellLevel}
 toList :: SpellLevelList -> [(CharacterClass, SpellLevel)]
 toList = M.toList . toMap
 
-data CharacterClass = Bard
-                    | Barbarian
+data CharacterClass = Barbarian
+                    | Bard
                     | Cleric
                     | Druid
                     | Fighter

@@ -152,24 +152,30 @@ classBlock :: AppWidget t m
            => m (Dynamic t (ClassData Int))
 classBlock = stashValue K.Class classBlock'
 
-classBlock' :: ( DomBuilder t m)
+classBlock' :: (AppWidget t m)
             => Maybe (ClassData Int) -> m (Dynamic t (ClassData Int))
 classBlock' minit = statBlock "Class" . grid $ do
     let cls = fromMaybe blankClass minit
-    row $ lbl "Class Name" >> lbl "Level" >> lbl "HP" >> lbl "BAB" >> lbl "Fort" >> lbl "Ref" >> lbl "Will"
+    row $ lbl "Class" >> lbl "Level" >> lbl "HP" >> lbl "BAB" >> lbl "Fort" >> lbl "Ref" >> lbl "Will"
     dynCls <- row $ do
-        x <- cell . inputElement $ def &
-            inputElementConfig_initialValue .~ (className cls)
-        let clsName = value x
+        cl <- classSelector (cdClass cls)
         levels <- cell $ numDefZero (level cls)
         hp <- cell $ numDefZero (classHealth cls)
-        baseAttackBonus <- cell $ numDefZero (bab cls)
-        fortSave <- cell $ numDefZero (fortitude cls)
-        refSave <- cell $ numDefZero (reflex cls)
-        willSave <- cell $ numDefZero (will cls)
-        return $ ClassData <$> clsName <*> levels <*> baseAttackBonus <*> fortSave <*> refSave <*> willSave <*> hp
+        let classLevelStats = classAndLevel <$> cl <*> levels
+        cellClass "num" $ display (bab <$> classLevelStats)
+        cellClass "num" $ display (fortitude <$> classLevelStats)
+        cellClass "num" $ display (reflex <$> classLevelStats)
+        cellClass "num" $ display (will <$> classLevelStats)
+        return $ ClassData <$> cl <*> levels <*> hp <*> classLevelStats
     return dynCls
     where numDefZero initVal = fromMaybe 0 <$$> numberInput initVal
+
+classSelector :: (AppWidget t m) => CharacterClass -> m (Dynamic t CharacterClass)
+classSelector initCl = do
+    let classes = M.fromList ((\cl -> (cl, showT cl)) <$> enumAll)
+                  :: M.Map CharacterClass Text
+    clDropdown <- elClass "div" "select side-margin" $ dropdown initCl (pure classes) def
+    return $ _dropdown_value clDropdown
 
 -- displays current total health, temp hp, wounds, remaining health
 healthBlock :: AppWidget t m => Dynamic t (Abilities Int) -> Dynamic t (ClassData Int) -> m ()
@@ -199,7 +205,7 @@ combatManuverBlock abl cls = statBlock "Combat Mnvr" . grid $ do
     where combatStats = do
               strengthMod <- str <$> absMod
               dexterity <- dex <$> absMod
-              baseAttack <- bab <$> cls
+              baseAttack <- bab . clStats <$> cls
               return $ (strengthMod + baseAttack, strengthMod + dexterity + baseAttack + 10)
           cmb = fst <$> combatStats
           cmd = snd <$> combatStats
