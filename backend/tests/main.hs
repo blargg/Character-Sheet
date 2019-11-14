@@ -11,7 +11,7 @@ import Backend.Database (classColumn)
 
 prop_every_caster_has_col :: Property
 prop_every_caster_has_col = property $ do
-    cl <- forAll (Gen.enumBounded :: Gen Class)
+    cl <- forAll (Gen.enumBounded :: Gen CharacterClass)
     if isSpellCaster cl
        then assert . isJust $ classColumn cl
        else assert . not . isJust $ classColumn cl
