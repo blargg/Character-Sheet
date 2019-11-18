@@ -44,6 +44,7 @@ spell_book :: forall t m.
 spell_book = Bulma.cardClass "page" $ mdo
     Bulma.title 3 "Spell Book"
     query <- searchBox
+    Bulma.hr
     pb <- getPostBuild
     let search = PagedSearch <$> query <*> curPage
     let initialLoad = fmap spellRequest $ tag (current search) pb
@@ -105,10 +106,10 @@ removeCount key m = Map.update f key m
 
 prepedSpell :: AppWidget t m => Spell -> Int -> m (Event t Spell)
 prepedSpell sp remaining = do
-    Bulma.hr
-    E.div $ spell_display sp
-    E.div $ text $ showT remaining <> " Prepared"
-    castEv <- E.div $ Bulma.button "Cast"
+    let rightSide = do
+            Bulma.levelItem $ text $ showT remaining <> " Prepared"
+            Bulma.levelItem $ Bulma.button "Cast"
+    castEv <- E.div $ spell_display sp rightSide
     return $ sp <$ castEv
 
 saved_spell_sets :: AppWidget t m => Dynamic t PrepSet -> m (Event t PrepSet)
@@ -186,14 +187,18 @@ empty_spell_list = do
 
 spellbook_spell :: AppWidget t m => Spell -> m (Event t Spell)
 spellbook_spell sp = do
-    Bulma.hr
-    spell_display sp
-    prep <- E.div $ Bulma.button "Prepare"
+    let prepButton = Bulma.button "Prepare"
+    prep <- spell_display sp prepButton
     return $ sp <$ prep
 
-spell_display :: AppWidget t m => Spell -> m ()
-spell_display Spell{..} = mdo
-    Bulma.titleClass "is-marginless" 5 spellName
+spell_display :: AppWidget t m => Spell -> m a -> m a
+spell_display Spell{..} rightLevel = mdo
+    (expanded, result) <- Bulma.level $ do
+        left <- Bulma.levelLeft $ do
+            Bulma.levelItem $ Bulma.titleClass "is-marginless" 5 spellName
+            Bulma.levelItem $ expandCollapseText Closed
+        right <- Bulma.levelRight $ rightLevel
+        return (left, right)
     collapseSection expanded $ do
         E.div . text $ description
         E.divC "flexContainer" $ do
@@ -207,8 +212,7 @@ spell_display Spell{..} = mdo
                 E.div . spell_levels $ spellLevel
                 E.div $ lbl' "Spell Resist" >> space' >> E.span (text . showT $ spellResist)
                 E.div $ lbl' "Target" >> space' >> E.span (text . fmt $ target)
-    expanded <- expandCollapseText Closed
-    return ()
+    return result
 
 spell_levels :: (DomBuilder t m) => SpellLevelList -> m ()
 spell_levels (SpellLevelList sl) = do
