@@ -45,6 +45,7 @@ module Data.CharacterSheet
     , highestFaceValue
     , initiative'
     , isSpellCaster
+    , maxSpellLevel
     , nmd
     , fmtComps
     , pathfinderSkills
@@ -450,6 +451,91 @@ classAndLevel Wizard 19 = ClStats 9 6 6 11
 classAndLevel Wizard 20 = ClStats 10 6 6 12
 
 classAndLevel _ _ = ClStats 0 0 0 0
+
+maxSpellLevel :: CharacterClass -> Int -> SpellLevel
+maxSpellLevel cl lvl = SpellLevel $ maxSpellLevel' cl lvl
+
+maxSpellLevel' :: CharacterClass -> Int -> Int
+maxSpellLevel' Barbarian _ = 0
+maxSpellLevel' Fighter _ = 0
+maxSpellLevel' Monk _ = 0
+maxSpellLevel' Rogue _ = 0
+maxSpellLevel' Bard l = mediumSpellMax l
+maxSpellLevel' Cleric l = fastSpellMax l
+maxSpellLevel' Druid l = fastSpellMax l
+maxSpellLevel' Paladin l = slowSpellMax l
+maxSpellLevel' Ranger l = slowSpellMax l
+maxSpellLevel' Sorcerer l = fastSpellMax l
+maxSpellLevel' Wizard l = fastSpellMax l
+
+fastSpellMax :: Int -> Int
+fastSpellMax 1 =  1
+fastSpellMax 2 =  1
+fastSpellMax 3 =  2
+fastSpellMax 4 =  2
+fastSpellMax 5 =  3
+fastSpellMax 6 =  3
+fastSpellMax 7 =  4
+fastSpellMax 8 =  4
+fastSpellMax 9 =  5
+fastSpellMax 10 = 5
+fastSpellMax 11 = 6
+fastSpellMax 12 = 6
+fastSpellMax 13 = 7
+fastSpellMax 14 = 7
+fastSpellMax 15 = 8
+fastSpellMax 16 = 8
+fastSpellMax 17 = 9
+fastSpellMax 18 = 9
+fastSpellMax 19 = 9
+fastSpellMax 20 = 9
+fastSpellMax _ = 0
+
+mediumSpellMax :: Int -> Int
+mediumSpellMax 1 = 1
+mediumSpellMax 2 = 1
+mediumSpellMax 3 = 1
+mediumSpellMax 4 = 2
+mediumSpellMax 5 = 2
+mediumSpellMax 6 = 2
+mediumSpellMax 7 = 3
+mediumSpellMax 8 = 3
+mediumSpellMax 9 = 3
+mediumSpellMax 10 = 4
+mediumSpellMax 11 = 4
+mediumSpellMax 12 = 4
+mediumSpellMax 13 = 5
+mediumSpellMax 14 = 5
+mediumSpellMax 15 = 5
+mediumSpellMax 16 = 5
+mediumSpellMax 17 = 6
+mediumSpellMax 18 = 6
+mediumSpellMax 19 = 6
+mediumSpellMax 20 = 6
+mediumSpellMax _ = 0
+
+slowSpellMax :: Int -> Int
+slowSpellMax 1 = 0
+slowSpellMax 2 = 0
+slowSpellMax 3 = 0
+slowSpellMax 4 = 1
+slowSpellMax 5 = 1
+slowSpellMax 6 = 1
+slowSpellMax 7 = 2
+slowSpellMax 8 = 2
+slowSpellMax 9 = 2
+slowSpellMax 10 = 3
+slowSpellMax 11 = 3
+slowSpellMax 12 = 3
+slowSpellMax 13 = 4
+slowSpellMax 14 = 4
+slowSpellMax 15 = 4
+slowSpellMax 16 = 4
+slowSpellMax 17 = 4
+slowSpellMax 18 = 4
+slowSpellMax 19 = 4
+slowSpellMax 20 = 4
+slowSpellMax _ = 0
 
 blankClass :: ClassData Int
 blankClass = ClassData { cdClass = Barbarian

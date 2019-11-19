@@ -21,6 +21,7 @@ import Reflex.Dom
 
 import qualified Frontend.Bulma as Bulma
 import qualified Frontend.Elements as E
+import Frontend.Data
 import Frontend.Input
 import Frontend.Layout
 import Frontend.Prelude
@@ -29,21 +30,23 @@ import Common.Api
 
 spells_page :: forall t m.
                AppWidget t m
-               => m ()
-spells_page = E.divC "columns" $ mdo
+               => Dynamic t StatsPageValues
+               -> m ()
+spells_page statPg = E.divC "columns" $ mdo
     E.divC "column" $ mdo
         preped <- prepared_spells prepEv setPrepedEv
         setPrepedEv <- saved_spell_sets preped
         return ()
-    prepEv <- E.divC "column" spell_book
+    prepEv <- E.divC "column" (spell_book statPg)
     return ()
 
 spell_book :: forall t m.
               AppWidget t m
-              => m (Event t Spell)
-spell_book = Bulma.cardClass "page" $ mdo
+              => Dynamic t StatsPageValues
+              -> m (Event t Spell)
+spell_book statPg = Bulma.cardClass "page" $ mdo
     Bulma.title 3 "Spell Book"
-    query <- searchBox
+    query <- searchBox statPg
     Bulma.hr
     pb <- getPostBuild
     let search = PagedSearch <$> query <*> curPage
@@ -143,13 +146,40 @@ saved_set currentPreped initialSaved = Bulma.level $ do
 fSingle :: (Functor f) => f a -> f [a]
 fSingle = fmap (\x -> [x])
 
-searchBox :: ( DomBuilder t m
-             , MonadFix m
-             , MonadHold t m
-             , PostBuild t m
-             ) => m (Dynamic t SpellQuery)
-searchBox = E.divC "control" $ do
+searchBox :: ( AppWidget t m) => Dynamic t StatsPageValues
+               -> m (Dynamic t SpellQuery)
+searchBox statPg = E.divC "control" $ do
     search_text <- E.divC "field" $ Bulma.textInput "Search"
+    let clrTabs = Map.fromList $ [ (1::Int, "Manual")
+                                 , (2, "Auto")
+                                 ]
+    clrTab <- Bulma.tabSelection clrTabs
+    crm <- displayIf ((==1) <$> clrTab) manualClassRestriction
+    cra <- displayIf ((==2) <$> clrTab) $ autoClassRestriction statPg
+    let classRestriction = do
+        cTab <- clrTab
+        case cTab of
+          1 -> crm
+          2 -> cra
+          _ -> undefined
+    return $ mkSearch
+        <$> search_text
+        <*> classRestriction
+
+mkSearch :: Text -> ClassRestriction -> SpellQuery
+mkSearch search_text ClassRestriction{..} = SpellQuery { prefix = search_text
+                                                       , searchClass = rstrClass
+                                                       , minLevel = rstrMinLvl
+                                                       , maxLevel = rstrMaxLvl
+                                                       }
+
+data ClassRestriction = ClassRestriction { rstrClass :: Maybe CharacterClass
+                                         , rstrMinLvl :: Maybe SpellLevel
+                                         , rstrMaxLvl :: Maybe SpellLevel
+                                         }
+
+manualClassRestriction :: (AppWidget t m) => m (Dynamic t ClassRestriction)
+manualClassRestriction =  do
     let classes = Map.fromList ((\cl -> (Just cl, showT cl)) <$> filter isSpellCaster enumAll)
                   <> (Nothing =: "Any Class")
                   :: Map (Maybe CharacterClass) Text
@@ -161,11 +191,25 @@ searchBox = E.divC "control" $ do
         lbl' "max level"
         maxL <- numberInput' noValue
         return (minL, maxL)
-    return $ SpellQuery
-        <$> search_text
-        <*> _dropdown_value cl
+    return $ ClassRestriction
+        <$> _dropdown_value cl
         <*> (fmap . fmap) SpellLevel minLevel
         <*> (fmap . fmap) SpellLevel maxLevel
+
+autoClassRestriction :: (AppWidget t m)
+                     => Dynamic t StatsPageValues
+                     -> m (Dynamic t ClassRestriction)
+autoClassRestriction statsPg = do
+    dynText $ fmap (describeClass) statsPg
+    return $ mkRestriction <$> statsPg
+        where mkRestriction (StatsPageValues ClassData{..}) = ClassRestriction { rstrClass = Just cdClass
+                                                                               , rstrMinLvl = Nothing
+                                                                               , rstrMaxLvl = Just $ maxSpellLevel cdClass level
+                                                                               }
+              describeClass (StatsPageValues ClassData{..}) = let (SpellLevel lvl) = maxSpellLevel cdClass level
+                                                               in if isSpellCaster cdClass
+                                                                  then showT cdClass <> " spells, up to spell level " <> showT lvl
+                                                                  else "Set the class for your character to a spellcaster on the Stats tab."
 
 -- POST a JSON request for a spell list
 spellRequest :: SpellSearch -> XhrRequest Text

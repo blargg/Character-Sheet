@@ -23,6 +23,7 @@ module Frontend.Bulma
     , pagination
     , subtitle
     , tabs
+    , tabSelection
     , textInput
     , title
     , title'
@@ -217,6 +218,31 @@ tabDisplayFull divCl activeClass tabItems = do
     headerBarLink :: Text -> k -> Dynamic t Bool -> m (Event t k)
     headerBarLink x k isSelected = do
       let attrs = fmap (\b -> if b then Map.singleton "class" activeClass else Map.empty) isSelected
+      elDynAttr "li" attrs $ do
+        a <- link x
+        return $ fmap (const k) (_link_clicked a)
+
+-- Displays a tab that you can select from
+-- Returns the currently selected tab
+tabSelection :: (MonadFix m
+                , DomBuilder t m
+                , PostBuild t m
+                , MonadHold t m
+                , Eq k
+                , Num k
+                ) => Map k Text
+                  -> m (Dynamic t k)
+tabSelection m = do
+    let items = Map.toList m
+    elClass "div" "tabs is-large" $ el "ul" $ mdo
+        evs <- mapM (\(k, txt) -> headerBarLink txt k ((==k) <$> tabDyn')) items
+        let tabEv = leftmost evs
+        tabDyn' <- holdDyn 1 tabEv
+        return tabDyn'
+  where
+    headerBarLink :: (DomBuilder t m, PostBuild t m) => Text -> k -> Dynamic t Bool -> m (Event t k)
+    headerBarLink x k isSelected = do
+      let attrs = fmap (\b -> if b then Map.singleton "class" "is-active" else Map.empty) isSelected
       elDynAttr "li" attrs $ do
         a <- link x
         return $ fmap (const k) (_link_clicked a)

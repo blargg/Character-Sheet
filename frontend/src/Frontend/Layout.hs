@@ -2,6 +2,7 @@
 module Frontend.Layout
     ( cell
     , cellClass
+    , displayIf
     , grid
     , labelCell
     , lbl'
@@ -14,6 +15,7 @@ module Frontend.Layout
 
 import Reflex.Dom.Core
 
+import qualified Data.Map as Map
 import Data.Text (Text)
 import qualified Frontend.Bulma as Bulma
 import qualified Frontend.Elements as E
@@ -50,3 +52,11 @@ space width = E.spanAttr ("style" =: ("display:inline-block; width: " <> width))
 -- typical single space
 space' :: (DomBuilder t m) => m ()
 space' = space "0.5em"
+
+
+displayIf :: (DomBuilder t m, PostBuild t m) => Dynamic t Bool -> m a -> m a
+displayIf shouldDisplayDyn mkWidget = do
+    let mkAttrs True = Map.empty
+        mkAttrs False = "style" =: "display: none"
+        attrs = mkAttrs <$> shouldDisplayDyn
+    elDynAttr "div" attrs $ mkWidget

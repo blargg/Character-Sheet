@@ -166,7 +166,7 @@ filterSpells SpellQuery{ prefix, searchClass, minLevel, maxLevel } sp = do
           fmap (\clCol -> (sp ^. clCol) >=. val (Just minLvl)) $
           clCols
       (_, Nothing) -> return ()
-      ([], _) -> return ()
+      ([], _) -> where_ (val False) -- no spellcasting classes were selected
     case (clCols, maxLevel) of
       (_:_, Just maxLvl) ->
           where_ $
@@ -174,7 +174,7 @@ filterSpells SpellQuery{ prefix, searchClass, minLevel, maxLevel } sp = do
           fmap (\clCol -> (sp ^. clCol) <=. val (Just maxLvl)) $
           clCols
       (_, Nothing) -> return ()
-      ([], _) -> return ()
+      ([], _) -> where_ (val False) -- no spellcasting classes were selected
 
 -- gets the column for the specified class
 classColumn :: CharacterClass -> Maybe (EntityField SpellRow (Maybe SpellLevel))

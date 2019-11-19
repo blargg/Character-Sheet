@@ -20,6 +20,7 @@ import Common.Route
 import Common.Compose
 import Data.CharacterSheet
 import Frontend.Armor
+import Frontend.Data
 import Frontend.Input
 import Frontend.Layout
 import Frontend.Spells (spells_page)
@@ -88,11 +89,19 @@ sheet_body :: ( DomBuilder t m
               )
               => m ()
 sheet_body =
-    prerender_ loading_page $
-    Bulma.tabs $
-    (1 :: Int) =: ("Stats", stat_page)
-    <> 2 =: ("Spells", spells_page)
-    <> 3 =: ("Inventory", Inventory.main)
+    prerender_ loading_page main_tabs
+
+main_tabs :: AppWidget t m => m ()
+main_tabs = do
+    let tabs = M.fromList [ (1::Int, "Stats")
+                          , (2, "Spells")
+                          , (3, "Inventory")
+                          ]
+    tabDyn <- Bulma.tabSelection tabs
+    stPage <- displayIf ((==1) <$> tabDyn) stat_page
+    displayIf ((==2) <$> tabDyn) (spells_page stPage)
+    displayIf ((==3) <$> tabDyn) Inventory.main
+    return ()
 
 -- displays before the page is fully loaded and rendered
 loading_page :: (DomBuilder t m) => m ()
@@ -100,7 +109,7 @@ loading_page = do
     Bulma.title 1 "Loading"
     Bulma.indeterminateProgress
 
-stat_page :: (AppWidget t m) => m ()
+stat_page :: (AppWidget t m) => m (Dynamic t StatsPageValues)
 stat_page = do
     _ <- characterName
     rec abl <- flex $ do
@@ -113,7 +122,7 @@ stat_page = do
     attacksBlock
     _ <- armorBlock abl -- armor class
     _ <- skillsBlock abl pathfinderSkills -- skill map
-    return ()
+    return $ StatsPageValues <$> cls
     where flex = elClass "div" "flexContainer"
 
 characterName :: AppWidget t m => m (Dynamic t Text)

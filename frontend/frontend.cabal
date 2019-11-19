@@ -28,6 +28,7 @@ library
     Frontend.About
     Frontend.Armor
     Frontend.Bulma
+    Frontend.Data
     Frontend.Elements
     Frontend.Inventory
     Frontend.Javascript
