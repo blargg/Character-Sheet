@@ -1,7 +1,7 @@
 frontend/dist
 backend/dist/
 common/dist/
-spell_parser/dist/
+database-util/dist/
 
 dist-newstyle
 result
