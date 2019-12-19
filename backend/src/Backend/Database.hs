@@ -21,6 +21,8 @@ module Backend.Database
     , searchSpells
     , toSpellRow
     , fromSpellRow
+    , toFeatRow
+    , fromFeatRow
     ) where
 
 import Control.Monad.Reader
@@ -56,6 +58,14 @@ SpellRow
     rangerLvl SpellLevel Maybe
     sorcererLvl SpellLevel Maybe
     wizardLvl SpellLevel Maybe
+FeatRow
+    name Text
+    description Text
+    type FeatType
+    prereqs Text
+    effect Text
+    normalEffect Text
+    extra Text
 |]
 
 createDatabase :: (MonadIO m) => [Spell] -> ReaderT SqlBackend m ()
@@ -120,6 +130,26 @@ fromSpellRow SpellRow { spellRowName
                                 }
                                     where toMap cl (Just lvl) = cl =: lvl
                                           toMap _ Nothing = Map.empty
+
+toFeatRow :: Feat -> FeatRow
+toFeatRow Feat{..} = FeatRow { featRowName = featName
+                             , featRowDescription = featDescription
+                             , featRowType = featType
+                             , featRowPrereqs = featPrereqs
+                             , featRowEffect = featEffect
+                             , featRowNormalEffect = normalEffect
+                             , featRowExtra = featExtra
+                             }
+
+fromFeatRow :: FeatRow -> Feat
+fromFeatRow FeatRow{..} = Feat { featName  = featRowName
+                               , featDescription = featRowDescription
+                               , featType = featRowType
+                               , featPrereqs = featRowPrereqs
+                               , featEffect = featRowEffect
+                               , normalEffect = featRowNormalEffect
+                               , featExtra = featRowExtra
+                               }
 
 searchSpells :: (MonadIO m) => SpellSearch -> ReaderT SqlBackend m [Spell]
 searchSpells spSearch =

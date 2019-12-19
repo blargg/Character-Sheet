@@ -54,3 +54,11 @@ instance PersistField SpellLevel where
 
 instance PersistFieldSql SpellLevel where
     sqlType _ = SqlInt32
+
+instance PersistField FeatType where
+    toPersistValue = PersistInt64 . fromIntegral . fromEnum
+    fromPersistValue (PersistInt64 x) = Right . toEnum . fromIntegral $ x
+    fromPersistValue _ = Left "PersistField.FeatType.fromPersistValue called on wrong data type"
+
+instance PersistFieldSql FeatType where
+    sqlType _ = SqlInt32

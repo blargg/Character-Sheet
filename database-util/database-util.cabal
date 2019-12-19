@@ -23,6 +23,7 @@ executable database-util
                , cassava
                , common
                , containers
+               , filepath
                , persistent
                , persistent-sqlite
                , persistent-template

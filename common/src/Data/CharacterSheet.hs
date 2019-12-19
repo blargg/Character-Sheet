@@ -19,6 +19,8 @@ module Data.CharacterSheet
     , ClStats(..)
     , Dice(..)
     , Die
+    , Feat(..)
+    , FeatType(..)
     , Fmt(..)
     , GameDuration(..)
     , Inventory(..)
@@ -734,6 +736,28 @@ data Inventory a = Inventory { goldPieces :: a
                              , inventoryItems :: [Text]
                              }
     deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON, FromJSONKey, ToJSONKey)
+
+data FeatType = Achievement
+              | Combat
+              | General
+              | Grit
+              | ItemCreation
+              | Metamagic
+              | Monster
+              | Mythic
+              | Story
+    deriving (Show, Enum)
+
+data Feat = Feat { featName :: Text
+                 , featDescription :: Text
+                 , featType :: FeatType
+                 , featPrereqs :: Text
+                 , featEffect :: Text
+                 , normalEffect :: Text
+                 , featExtra :: Text
+                 }
+                 deriving Show
+
 
 pathfinderSkills :: Map Text Ability
 pathfinderSkills = M.fromList [ ("Acrobatics", Dexterity)
