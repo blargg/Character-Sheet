@@ -1,11 +1,15 @@
 {-# language DeriveGeneric  #-}
 {-# language DeriveAnyClass  #-}
 module Common.Api
-    ( PagedResponse(..)
+    ( FeatQuery(..)
+    , FeatSearch
+    , FeatSearchResponse
+    , PagedResponse(..)
     , PagedSearch(..)
     , SpellQuery(..)
     , SpellSearch
     , SpellSearchResponse
+    , featResponse
     , spellSearch
     , spellResponse
     ) where
@@ -35,13 +39,24 @@ spellSearch p cl minL maxL = PagedSearch (SpellQuery p cl minL maxL)
 
 -- defines the search criteria when searching for spells
 data SpellQuery = SpellQuery { prefix :: Text
-                               , searchClass :: Maybe CharacterClass
-                               , minLevel :: Maybe SpellLevel
-                               , maxLevel :: Maybe SpellLevel
-                               }
+                             , searchClass :: Maybe CharacterClass
+                             , minLevel :: Maybe SpellLevel
+                             , maxLevel :: Maybe SpellLevel
+                             }
     deriving (Generic, ToJSON, FromJSON)
 
 type SpellSearchResponse = PagedResponse [Spell]
 
 spellResponse :: [Spell] -> Int -> Int -> SpellSearchResponse
 spellResponse = PagedResponse
+
+data FeatQuery = FeatQuery { featNamePrefix :: Text
+                           }
+    deriving (Generic, ToJSON, FromJSON)
+
+type FeatSearch = PagedSearch FeatQuery
+
+type FeatSearchResponse = PagedResponse [Feat]
+
+featResponse :: [Feat] -> Int -> Int -> FeatSearchResponse
+featResponse = PagedResponse

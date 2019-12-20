@@ -28,6 +28,7 @@ import Frontend.Storage hiding (StorageKey(..))
 import qualified Frontend.Storage as K
 import qualified Frontend.About as About
 import qualified Frontend.Elements as E
+import qualified Frontend.Feats as Feats
 import qualified Frontend.Bulma as Bulma
 import qualified Frontend.License as License
 import qualified Frontend.Inventory as Inventory
@@ -96,11 +97,13 @@ main_tabs = do
     let tabs = M.fromList [ (1::Int, "Stats")
                           , (2, "Spells")
                           , (3, "Inventory")
+                          , (4, "Feats")
                           ]
     tabDyn <- Bulma.tabSelection tabs
     stPage <- displayIf ((==1) <$> tabDyn) stat_page
     displayIf ((==2) <$> tabDyn) (spells_page stPage)
     displayIf ((==3) <$> tabDyn) Inventory.main
+    displayIf ((==4) <$> tabDyn) Feats.main
     return ()
 
 -- displays before the page is fully loaded and rendered

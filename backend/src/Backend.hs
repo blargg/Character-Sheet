@@ -40,6 +40,7 @@ server _ (BackendRoute_Missing :=> Identity ()) = writeBS "missing"
 server sql (BackendRoute_API :=> Identity _) = dir "api" $
     route [ ("echo/:echoparam", echoHandler)
           , ("spelllist/", runReaderT spellListHandler sql)
+          , ("featlist/", runReaderT featListHandler sql)
           ]
 
 echoHandler :: Snap ()
@@ -58,10 +59,25 @@ spellListHandler = do
           let curpage = page search
           jsonResponse
           writeLBS . Aeson.encode $ spellResponse sps curpage pages
-      Nothing -> lift $ do
-          modifyResponse $ setResponseStatus 500 "Internal Server Error"
-          writeBS "500 error"
-          finishWith =<< getResponse
+      Nothing -> lift response500
+
+featListHandler :: ReaderT SqlBackend Snap ()
+featListHandler = do
+    rb <- readRequestBody 2048
+    case Aeson.decode rb :: Maybe FeatSearch of
+      Just search -> do
+          feats <- searchFeats search
+          pages <- countFeatPages search
+          let curpage = page search
+          jsonResponse
+          writeLBS . Aeson.encode $ featResponse feats curpage pages
+      Nothing -> lift response500
+
+response500 :: Snap ()
+response500 = do
+    modifyResponse $ setResponseStatus 500 "Internal Server Error"
+    writeBS "500 error"
+    finishWith =<< getResponse
 
 jsonResponse :: MonadSnap m => m ()
 jsonResponse = modifyResponse $ setHeader "Content-Type" "application/json"

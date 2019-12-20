@@ -30,6 +30,7 @@ library
     Frontend.Bulma
     Frontend.Data
     Frontend.Elements
+    Frontend.Feats
     Frontend.Inventory
     Frontend.Javascript
     Frontend.License

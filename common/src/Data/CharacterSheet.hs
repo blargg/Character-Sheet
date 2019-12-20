@@ -746,7 +746,18 @@ data FeatType = Achievement
               | Monster
               | Mythic
               | Story
-    deriving (Show, Enum)
+    deriving (Show, Enum, Generic, ToJSON, FromJSON)
+
+instance Fmt FeatType where
+    fmt Achievement  = "Achievement"
+    fmt Combat       = "Combat"
+    fmt General      = "General"
+    fmt Grit         = "Grit"
+    fmt ItemCreation = "Item Creation"
+    fmt Metamagic    = "Metamagic"
+    fmt Monster      = "Monster"
+    fmt Mythic       = "Mythic"
+    fmt Story        = "Story"
 
 data Feat = Feat { featName :: Text
                  , featDescription :: Text
@@ -756,7 +767,7 @@ data Feat = Feat { featName :: Text
                  , normalEffect :: Text
                  , featExtra :: Text
                  }
-                 deriving Show
+                 deriving (Generic, ToJSON, FromJSON)
 
 
 pathfinderSkills :: Map Text Ability

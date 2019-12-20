@@ -16,13 +16,15 @@
 module Backend.Database
     ( countPages
     , classColumn
+    , countFeatPages
     , createDatabase
-    , migrateAll
-    , searchSpells
-    , toSpellRow
-    , fromSpellRow
-    , toFeatRow
     , fromFeatRow
+    , fromSpellRow
+    , migrateAll
+    , searchFeats
+    , searchSpells
+    , toFeatRow
+    , toSpellRow
     ) where
 
 import Control.Monad.Reader
@@ -162,7 +164,10 @@ searchSpells spSearch =
         return sp
 
 spellsPerPage :: (Num a) => a
-spellsPerPage = 10
+spellsPerPage = itemsPerPage
+
+itemsPerPage :: (Num a) => a
+itemsPerPage = 10
 
 countPages :: (MonadIO m) => SpellSearch -> ReaderT SqlBackend m Int
 countPages spSearch = do
@@ -205,6 +210,36 @@ filterSpells SpellQuery{ prefix, searchClass, minLevel, maxLevel } sp = do
           clCols
       (_, Nothing) -> return ()
       ([], _) -> where_ (val False) -- no spellcasting classes were selected
+
+
+searchFeats :: (MonadIO m) => FeatSearch -> ReaderT SqlBackend m [Feat]
+searchFeats featSearch =
+    (fmap . fmap) (fromFeatRow . entityVal) $
+    select $
+    from $ \ft -> do
+        filterFeats (query featSearch) ft
+        limit itemsPerPage
+        offset $ (fromIntegral (page featSearch - 1)) * itemsPerPage
+        return ft
+
+countFeatPages :: (MonadIO m) => FeatSearch -> ReaderT SqlBackend m Int
+countFeatPages ftSearch = do
+    [spCount] <- countFeatRows' ftSearch
+    return . ceiling $ fromIntegral (unValue spCount) / (spellsPerPage :: Float)
+
+countFeatRows' :: (MonadIO m) => FeatSearch -> ReaderT SqlBackend m [Value Int]
+countFeatRows' spSearch =
+    select $
+    from $ \sp -> do
+        filterFeats (query spSearch) sp
+        return countRows :: SqlQuery (SqlExpr (Value Int))
+
+filterFeats :: FeatQuery
+            -> SqlExpr (Entity FeatRow)
+            -> SqlQuery ()
+filterFeats FeatQuery{..} ft = do
+    let queryPrefix = featNamePrefix <> "%"
+    where_ (ft ^. FeatRowName `like` val queryPrefix)
 
 -- gets the column for the specified class
 classColumn :: CharacterClass -> Maybe (EntityField SpellRow (Maybe SpellLevel))
