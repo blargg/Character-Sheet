@@ -56,8 +56,12 @@ spellListHandler = do
           sps <- searchSpells search
           pages <- countPages search
           let curpage = page search
+          jsonResponse
           writeLBS . Aeson.encode $ spellResponse sps curpage pages
       Nothing -> lift $ do
           modifyResponse $ setResponseStatus 500 "Internal Server Error"
           writeBS "500 error"
           finishWith =<< getResponse
+
+jsonResponse :: MonadSnap m => m ()
+jsonResponse = modifyResponse $ setHeader "Content-Type" "application/json"
