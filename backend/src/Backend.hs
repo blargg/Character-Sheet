@@ -38,16 +38,9 @@ run_backend serve = do
 server :: SqlBackend -> R BackendRoute -> Snap ()
 server _ (BackendRoute_Missing :=> Identity ()) = writeBS "missing"
 server sql (BackendRoute_API :=> Identity _) = dir "api" $
-    route [ ("echo/:echoparam", echoHandler)
-          , ("spelllist/", runReaderT spellListHandler sql)
+    route [ ("spelllist/", runReaderT spellListHandler sql)
           , ("featlist/", runReaderT featListHandler sql)
           ]
-
-echoHandler :: Snap ()
--- echoHandler = writeBS . rqContextPath =<< getRequest
-echoHandler = do
-    param <- getParam "echoparam"
-    maybe (writeBS "must specify echo/param in URL") writeBS param
 
 spellListHandler :: ReaderT SqlBackend Snap ()
 spellListHandler = do
