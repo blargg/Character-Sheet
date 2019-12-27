@@ -18,6 +18,7 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Text (Text)
 import Reflex.Dom
+import Reflex.Time (debounce)
 
 import qualified Frontend.Bulma as Bulma
 import qualified Frontend.Elements as E
@@ -50,8 +51,9 @@ spell_book statPg = Bulma.cardClass "page" $ mdo
     Bulma.hr
     pb <- getPostBuild
     let search = PagedSearch <$> query <*> curPage
-    let initialLoad = fmap spellRequest $ tag (current search) pb
-    let spellLoadReqEvents = leftmost [fmap spellRequest (updated search), initialLoad ]
+    searchEvents <- debounce 0.25 (updated search)
+    let initialLoad = tag (current search) pb
+    let spellLoadReqEvents = fmap spellRequest $ leftmost [searchEvents, initialLoad ]
     -- event when we load a new set of spells to show
     spellLoad <- fmapMaybe decodeXhrResponse <$> performRequestAsync spellLoadReqEvents :: m (Event t SpellSearchResponse)
     spellPage <- holdDyn emptyResponse spellLoad
