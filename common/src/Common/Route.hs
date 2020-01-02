@@ -27,7 +27,6 @@ import Control.Category
 import Control.Category as Cat
 import Data.Text (Text)
 import Data.Functor.Identity
-import Data.Functor.Sum
 
 import Obelisk.Route
 import Obelisk.Route.TH
@@ -58,18 +57,20 @@ samePage FrontendRoute_License FrontendRoute_License = True
 samePage _ _ = False
 
 backendRouteEncoder
-  :: Encoder (Either Text) Identity (R (Sum BackendRoute (ObeliskRoute FrontendRoute))) PageName
-backendRouteEncoder = handleEncoder (const (InL BackendRoute_Missing :/ ())) $
-  pathComponentEncoder $ \case
-    InL backendRoute -> case backendRoute of
+  :: Encoder (Either Text) Identity (R (FullRoute BackendRoute FrontendRoute)) PageName
+backendRouteEncoder = mkFullRouteEncoder
+    (FullRoute_Backend BackendRoute_Missing :/ ())
+    (\case
       BackendRoute_API -> PathSegment "api" $ Cat.id
       BackendRoute_Missing -> PathSegment "missing" $ unitEncoder mempty
-    InR obeliskRoute -> obeliskRouteSegment obeliskRoute $ \case
+    )
+    (\case
       -- The encoder given to PathEnd determines how to parse query parameters,
       -- in this example, we have none, so we insist on it.
       FrontendRoute_Main -> PathEnd $ unitEncoder mempty
       FrontendRoute_About -> PathSegment "about" $ unitEncoder mempty
       FrontendRoute_License -> PathSegment "license" $ unitEncoder mempty
+    )
 
 
 concat <$> mapM deriveRouteComponent

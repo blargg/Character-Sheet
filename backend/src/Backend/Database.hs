@@ -28,6 +28,7 @@ module Backend.Database
     ) where
 
 import Control.Monad.Reader
+import Control.Monad.Fail
 import Data.Foldable (foldl1)
 import Data.Maybe (mapMaybe)
 import qualified Data.Map as Map
@@ -169,7 +170,7 @@ spellsPerPage = itemsPerPage
 itemsPerPage :: (Num a) => a
 itemsPerPage = 10
 
-countPages :: (MonadIO m) => SpellSearch -> ReaderT SqlBackend m Int
+countPages :: (MonadIO m, MonadFail m) => SpellSearch -> ReaderT SqlBackend m Int
 countPages spSearch = do
     [spCount] <- countSpellRows' spSearch
     return . ceiling $ fromIntegral (unValue spCount) / (spellsPerPage :: Float)
@@ -222,7 +223,7 @@ searchFeats featSearch =
         offset $ (fromIntegral (page featSearch - 1)) * itemsPerPage
         return ft
 
-countFeatPages :: (MonadIO m) => FeatSearch -> ReaderT SqlBackend m Int
+countFeatPages :: (MonadIO m, MonadFail m) => FeatSearch -> ReaderT SqlBackend m Int
 countFeatPages ftSearch = do
     [spCount] <- countFeatRows' ftSearch
     return . ceiling $ fromIntegral (unValue spCount) / (spellsPerPage :: Float)
