@@ -25,15 +25,18 @@ main = Bulma.cardClass "page top-margin" $ do
     featSearch
 
 featSearch :: forall t m. AppWidget t m => m ()
-featSearch = do
+featSearch = mdo
     query <- searchBox
     pb <- getPostBuild
-    let search = PagedSearch <$> query <*> pure 1
+    let search = PagedSearch <$> query <*> curPage
     let initialLoad = tag (current search) pb
     let featLoadReqEvents = fmap featRequest $ leftmost [ updated search, initialLoad ]
     featLoad <- fmapMaybe decodeXhrResponse <$> performRequestAsync featLoadReqEvents :: m (Event t FeatSearchResponse)
     feats <- holdDyn [] (fmap pageData featLoad)
+    numberOfPages <- holdDyn 1 (fmap totalPages featLoad)
     displayFeatList feats
+    curPage <- Bulma.pagination (() <$ updated query) numberOfPages
+    return ()
 
 featRequest :: FeatSearch -> XhrRequest Text
 featRequest s = postJson "api/featlist" s
