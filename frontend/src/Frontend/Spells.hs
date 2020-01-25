@@ -51,7 +51,7 @@ spell_book statPg = Bulma.cardClass "page" $ mdo
     Bulma.hr
     pb <- getPostBuild
     let search = PagedSearch <$> query <*> curPage
-    searchEvents <- debounce 0.25 (updated search)
+    let searchEvents = updated search
     let initialLoad = tag (current search) pb
     let spellLoadReqEvents = fmap spellRequest $ leftmost [searchEvents, initialLoad ]
     -- event when we load a new set of spells to show
@@ -152,6 +152,7 @@ searchBox :: ( AppWidget t m) => Dynamic t StatsPageValues
                -> m (Dynamic t SpellQuery)
 searchBox statPg = E.divC "control" $ do
     search_text <- E.divC "field" $ Bulma.textInput "Search"
+    debounced_text <- holdDyn "" =<< debounce 0.25 (updated search_text)
     let clrTabs = Map.fromList $ [ (1::Int, "Manual")
                                  , (2, "Auto")
                                  ]
@@ -165,7 +166,7 @@ searchBox statPg = E.divC "control" $ do
           2 -> cra
           _ -> undefined
     return $ mkSearch
-        <$> search_text
+        <$> debounced_text
         <*> classRestriction
 
 mkSearch :: Text -> ClassRestriction -> SpellQuery
