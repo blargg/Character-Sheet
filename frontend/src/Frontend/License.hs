@@ -9,7 +9,7 @@ import qualified Frontend.Bulma as Bulma
 import qualified Frontend.Elements as E
 
 main :: DomBuilder t m => m ()
-main = E.divC "card page" $ do
+main = Bulma.section . Bulma.container . E.divC "card page" $ do
     Bulma.title 1 "Licenses"
     el "p" $ text "This website makes use of the following licenses. These \
     \licenses cover game mechanics and spells."

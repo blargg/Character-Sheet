@@ -53,7 +53,8 @@ body :: ( DomBuilder t m
         )
      => RoutedT t (R FrontendRoute) m ()
 body = subRoute_ $ \x -> do
-    navigation $ case x of
+    navigation
+    case x of
         FrontendRoute_Main -> sheet_body
         FrontendRoute_About -> About.main
         FrontendRoute_License -> License.main
@@ -62,12 +63,11 @@ navigation :: ( DomBuilder t m
               , RouteToUrl (R FrontendRoute) m
               , SetRoute t (R FrontendRoute) m
               )
-              => m a -> m a
-navigation content = do
+              => m ()
+navigation = do
     Bulma.navbar (navItem FrontendRoute_Main) $ do
         navItem FrontendRoute_About
         navItem FrontendRoute_License
-    elClass "section" "section" $ E.divC "container" content
 
 navItem :: ( DomBuilder t m
            , RouteToUrl (R FrontendRoute) m
@@ -100,11 +100,13 @@ main_tabs = do
                           , (4, "Feats")
                           ]
     tabDyn <- Bulma.tabSelection tabs
-    stPage <- displayIf ((==1) <$> tabDyn) stat_page
-    displayIf ((==2) <$> tabDyn) (spells_page stPage)
-    displayIf ((==3) <$> tabDyn) Inventory.main
-    displayIf ((==4) <$> tabDyn) Feats.main
-    return ()
+    Bulma.section . Bulma.container $ do
+        stPage <- displayIf ((==1) <$> tabDyn) $ fadedBack stat_page
+        displayIf ((==2) <$> tabDyn) (fadedBack $ spells_page stPage)
+        displayIf ((==3) <$> tabDyn) $ fadedBack Inventory.main
+        displayIf ((==4) <$> tabDyn) $ fadedBack Feats.main
+        return ()
+        where fadedBack = E.divC "fadedBack"
 
 -- displays before the page is fully loaded and rendered
 loading_page :: (DomBuilder t m) => m ()

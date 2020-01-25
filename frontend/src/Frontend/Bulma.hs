@@ -9,6 +9,7 @@ module Frontend.Bulma
     , buttonPrimary
     , card
     , cardClass
+    , container
     , delete
     , hr
     , indeterminateProgress
@@ -21,6 +22,7 @@ module Frontend.Bulma
     , navStart
     , navbar
     , pagination
+    , section
     , subtitle
     , tabs
     , tabSelection
@@ -46,6 +48,12 @@ import Reflex.Dom.Core hiding (textInput, button)
 import Obelisk.Route
 import Obelisk.Route.Frontend
 import Data.Proxy
+
+section :: (DomBuilder t m) => m a -> m a
+section = elClass "section" "section"
+
+container :: (DomBuilder t m) => m a -> m a
+container = E.divC "container"
 
 -- basic definition of a materialize styled text input
 textInput :: (DomBuilder t m) => Text -> m (Dynamic t Text)

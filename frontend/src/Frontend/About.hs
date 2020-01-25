@@ -4,10 +4,11 @@ module Frontend.About (main) where
 
 import Reflex.Dom
 import Frontend.Bulma
+import Frontend.Bulma as Bulma
 import qualified Frontend.Elements as EL
 
 main :: DomBuilder t m => m ()
-main = do
+main = Bulma.section . Bulma.container $ do
     title 1 "About"
     el "p" $ text "GitHub: " >> EL.urlLink projectURL "project page"
     title 2 "Caution"

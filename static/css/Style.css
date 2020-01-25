@@ -1,6 +1,6 @@
 
 html, body {
-    background-color: lightblue;
+    background-color: rgb(208, 229, 251);
     font-family: 'Roboto', sans-serif;
     margin: 0px;
 }
@@ -129,4 +129,12 @@ input[type="number"] {
 /* Adjustments to Bulma.css */
 .pagination-list {
     justify-content: center;
+}
+
+.tabs {
+    background-color: white;
+}
+
+.navbar {
+    box-shadow: 0 2px 3px rgba(10,10,10,.15), 0 0 0 1px rgba(10,10,10,.15);
 }
