@@ -227,8 +227,8 @@ tabDisplayFull divCl activeClass tabItems = do
     headerBarLink x k isSelected = do
       let attrs = fmap (\b -> if b then Map.singleton "class" activeClass else Map.empty) isSelected
       elDynAttr "li" attrs $ do
-        a <- link x
-        return $ fmap (const k) (_link_clicked a)
+          (l, _) <- el' "a" (text x)
+          return $ fmap (const k) (domEvent Click l)
 
 -- Displays a tab that you can select from
 -- Returns the currently selected tab
@@ -252,8 +252,8 @@ tabSelection m = do
     headerBarLink x k isSelected = do
       let attrs = fmap (\b -> if b then Map.singleton "class" "is-active" else Map.empty) isSelected
       elDynAttr "li" attrs $ do
-        a <- link x
-        return $ fmap (const k) (_link_clicked a)
+          (l, _) <- el' "a" (text x)
+          return $ fmap (const k) (domEvent Click l)
 
 pgNumbers :: Int -> Int -> [Int]
 pgNumbers curPage maxPage = take (min 10 maxPage) $
@@ -279,7 +279,7 @@ staticPagination maxPages curPage = elClass "nav" "pagination" $ do
 
 pageNumber :: DomBuilder t m => Bool -> Int -> m (Event t Int)
 pageNumber selected n = el "li" $ do
-    l <- linkClass (showT n) (cl selected)
-    return $ n <$ _link_clicked l
+    (l, _) <- elClass' "a" (cl selected) (text $ showT n)
+    return $ n <$ domEvent Click l
         where cl True = "pagination-link is-current"
               cl False = "pagination-link"

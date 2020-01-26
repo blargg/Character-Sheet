@@ -297,10 +297,10 @@ skillLine abls initSkillMap skillTitle abl = row $ do
     let initSkill = fromMaybe blankSkill (M.lookup skillTitle initSkillMap)
     ct skillTitle
     ct . shortName $ abl
-    classCB <- cell . el "lbl" $ checkbox (isClassSkill initSkill) def <* E.span (text "")
+    isClassSk <- cell . el "lbl" $ input_checkbox (isClassSkill initSkill) <* E.span (text "")
     ranks <- cell $ fromMaybe 0 <$$> numberInput (skillRanks initSkill)
     miscMod <- cell $ fromMaybe 0 <$$> numberInput (skillMod initSkill)
-    let sk = Skill <$> pure skillTitle <*> value classCB <*> pure abl <*> ranks <*> miscMod
+    let sk = Skill <$> pure skillTitle <*> isClassSk <*> pure abl <*> ranks <*> miscMod
     cellClass "num" $ display (skillBonus <$> abls <*> sk)
     return sk
 

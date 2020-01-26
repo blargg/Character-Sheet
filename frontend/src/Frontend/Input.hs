@@ -11,6 +11,7 @@ module Frontend.Input
     , collapseSection
     , buttonC
     , editSpan
+    , input_checkbox
     , listWidget
     , listWidget'
     , multiLineWidget
@@ -175,8 +176,12 @@ expandCollapseText initState = mdo
         clickedEv = closeEv <> openEv
     return expState
     where
-        widget Open = _link_clicked <$> (linkClass "less" "extra")
-        widget Closed = _link_clicked <$> (linkClass "more" "extra")
+        widget Open = do
+            (l, _) <- elClass' "a" "extra" (text "less")
+            return $ domEvent Click l
+        widget Closed = do
+            (l, _) <- elClass' "a" "extra" (text "more")
+            return $ domEvent Click l
         displayStyle rep cur = if rep == cur then mempty
                                              else "style" =: "display: none;"
 
@@ -252,3 +257,11 @@ maxKey = fmap fst . lookupMax
 lookupMax :: Map k a -> Maybe (k, a)
 lookupMax m | Map.null m = Nothing
             | otherwise = Just (Map.findMax m)
+
+input_checkbox :: (DomBuilder t m) => Bool -> m (Dynamic t Bool)
+input_checkbox checked = do
+  let permanentAttrs = "type" =: "checkbox"
+  i <- inputElement $ def
+    & inputElementConfig_initialChecked .~ checked
+    & inputElementConfig_elementConfig . elementConfig_initialAttributes .~ Map.mapKeys (AttributeName Nothing) permanentAttrs
+  return $ _inputElement_checked i
