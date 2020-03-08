@@ -767,7 +767,7 @@ data Feat = Feat { featName :: Text
                  , normalEffect :: Text
                  , featExtra :: Text
                  }
-                 deriving (Generic, ToJSON, FromJSON)
+                 deriving (Generic, ToJSON, FromJSON, Show)
 
 
 pathfinderSkills :: Map Text Ability
