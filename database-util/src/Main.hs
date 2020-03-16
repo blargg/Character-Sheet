@@ -144,6 +144,12 @@ showHelp = do
     putStrLn $ "    feats.csv: csv file for all the feats to load"
     putStrLn $ "    spells.csv: csv file of all the spells"
 
+customMigration :: Migration
+customMigration = do
+    migrateAll
+    addMigration False "CREATE INDEX IF NOT EXISTS spell_row_name ON spell_row (name)"
+    addMigration False "CREATE INDEX IF NOT EXISTS feat_row_name ON feat_row (name)"
+
 generateDB :: String -> IO ()
 generateDB directory = do
     let spellsFile = directory </> "spells.csv"
@@ -151,7 +157,7 @@ generateDB directory = do
     putStrLn "Begin spell parser"
     putStrLn spellsFile
     runSqlite "pf.db" $ do
-        runMigration migrateAll
+        runMigration customMigration
         csvData <- liftIO $ BL.readFile spellsFile
         case decodeByName csvData of
           Left err -> liftIO $ putStrLn err
